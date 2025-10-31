@@ -344,11 +344,7 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
   exec: {
     command: [
       'sh', '-c',
-      `trap 'exit 0' TERM INT;  # <--- ADD THIS TO HANDLE SIGNALS
-      if ! command -v inotifywait >/dev/null 2>&1 || ! command -v rclone >/dev/null 2>&1 || ! command -v mutt >/dev/null 2>&1; then
-        echo "Installing backup dependencies..." >&2
-        apk add --no-cache inotify-tools jq rclone mutt bind-tools
-      fi
+      `trap 'exit 0' TERM INT;  # 
       while [ ! -f "${lndDataDir}/store.json" ]; do sleep 2; done
       while true; do
         inotifywait -q -e modify "${lndDataDir}/store.json" 2>/dev/null || true
