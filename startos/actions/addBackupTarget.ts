@@ -355,8 +355,7 @@ ${pass ? `pass = ${pass}\n` : ''}`
       updates.enabledRemotes = [...(store.enabledRemotes || []), ...newEnabled]
     }
 
-    await storeJson.merge(effects, updates)
-
+await storeJson.merge(effects, updates, { allowRestart: false } as any)
     return {
       version: '1',
       title: '✅ Backup Targets Added',

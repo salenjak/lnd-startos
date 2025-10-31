@@ -340,44 +340,85 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
       requires: ['primary'],
     })
     
- .addDaemon('channel-backup-watcher', {
+.addDaemon('channel-backup-watcher', {
   exec: {
     command: [
       'sh', '-c',
       `trap 'exit 0' TERM INT;  # 
-      while [ ! -f "${lndDataDir}/store.json" ]; do sleep 2; done
-      while true; do
-        inotifywait -q -e modify "${lndDataDir}/store.json" 2>/dev/null || true
-        enabled=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/store.json")
-        [ "$enabled" != "true" ] && sleep 10 && continue
-        rclone_b64=$(jq -r '.rcloneConfig // empty' "${lndDataDir}/store.json" 2>/dev/null || true)
-        if [ -n "$rclone_b64" ]; then
-          echo "$rclone_b64" | base64 -d > /tmp/rclone.conf
+      # Wait for store.json
+while [ ! -f "${lndDataDir}/store.json" ]; do sleep 2; done
+
+# Main config watch loop
+while true; do
+  # Wait for store.json change
+  inotifywait -q -e modify "${lndDataDir}/store.json" 2>/dev/null || true
+
+  enabled=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/store.json")
+  if [ "$enabled" != "true" ]; then
+    sleep 10
+    continue
+  fi
+
+  # Load config
+  rclone_b64=$(jq -r '.rcloneConfig // empty' "${lndDataDir}/store.json" 2>/dev/null || true)
+  if [ -n "$rclone_b64" ]; then
+    echo "$rclone_b64" | base64 -d > /tmp/rclone.conf
+  fi
+
+  remotes=$(jq -r '.selectedRcloneRemotes // empty | .[]' "${lndDataDir}/store.json" 2>/dev/null || true)
+  email_to=$(jq -r '.emailBackup.to // empty' "${lndDataDir}/store.json")
+  email_from=$(jq -r '.emailBackup.from // empty' "${lndDataDir}/store.json")
+
+  if [ -z "$remotes" ] && [ -z "$email_to" ]; then
+    sleep 10
+    continue
+  fi
+
+  # Wait for channel.backup to exist
+  while [ ! -f "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" ]; do sleep 5; done
+
+  # Inner file watch loop — runs as long as backup is enabled
+  while true; do
+    # Re-check enabled status every loop to allow graceful exit
+    enabled_now=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/store.json")
+    if [ "$enabled_now" != "true" ]; then
+      break
+    fi
+
+    # Wait for channel.backup change
+    inotifywait -q -e modify,move,create,attrib "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" 2>/dev/null || continue
+
+    echo "[$(date -Iseconds)] 🔄 Channel backup file changed. Triggering backup..." >&2
+
+    # Perform rclone backups
+    for remote in $remotes; do
+      if RCLONE_CONFIG=/tmp/rclone.conf rclone copy "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" "$remote" --log-level=INFO; then
+        echo "[$(date -Iseconds)] ✅ Backed up to $remote" >&2
+      else
+        echo "[$(date -Iseconds)] ❌ Failed to back up to $remote" >&2
+      fi
+    done
+
+    # Perform email backup
+    if [ -n "$email_to" ]; then
+      email_smtp_server=$(jq -r '.emailBackup.smtp_server // "smtp.gmail.com"' "${lndDataDir}/store.json")
+      email_smtp_port=$(jq -r '.emailBackup.smtp_port // 465' "${lndDataDir}/store.json")
+      email_smtp_user=$(jq -r '.emailBackup.smtp_user // empty' "${lndDataDir}/store.json")
+      email_smtp_pass=$(jq -r '.emailBackup.smtp_pass // empty' "${lndDataDir}/store.json")
+
+      if [ -z "$email_smtp_pass" ]; then
+        echo "[$(date -Iseconds)] ❌ Email backup skipped: missing SMTP password" >&2
+      else
+        nslookup "$email_smtp_server" >/dev/null 2>&1 || echo "[$(date -Iseconds)] ⚠️ DNS lookup failed for $email_smtp_server" >&2
+
+        protocol="smtps"
+        starttls="no"
+        if [ "$email_smtp_port" = "587" ]; then
+          protocol="smtp"
+          starttls="yes"
         fi
-        remotes=$(jq -r '.selectedRcloneRemotes // empty | .[]' "${lndDataDir}/store.json" 2>/dev/null || true)
-        email_to=$(jq -r '.emailBackup.to // empty' "${lndDataDir}/store.json")
-        email_from=$(jq -r '.emailBackup.from // empty' "${lndDataDir}/store.json")
-        email_smtp_server=$(jq -r '.emailBackup.smtp_server // "smtp.gmail.com"' "${lndDataDir}/store.json")
-        email_smtp_port=$(jq -r '.emailBackup.smtp_port // 465' "${lndDataDir}/store.json")
-        email_smtp_user=$(jq -r '.emailBackup.smtp_user // empty' "${lndDataDir}/store.json")
-        email_smtp_pass=$(jq -r '.emailBackup.smtp_pass // empty' "${lndDataDir}/store.json")
-        [ -z "$remotes" ] && [ -z "$email_to" ] && sleep 10 && continue
-        while [ ! -f "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" ]; do sleep 5; done
-        inotifywait -q -e modify,move,create,attrib "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" 2>/dev/null || true
-        for remote in $remotes; do
-          RCLONE_CONFIG=/tmp/rclone.conf rclone copy "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" "$remote" --log-level=INFO && \\
-          echo "[$(date -Iseconds)] ✅ Backed up to $remote" >&2 || \\
-          echo "[$(date -Iseconds)] ❌ Failed to back up to $remote" >&2
-        done
-        if [ -n "$email_to" ] && [ -n "$email_smtp_pass" ]; then
-          nslookup "$email_smtp_server" >&2 || echo "[$(date -Iseconds)] DNS lookup failed for $email_smtp_server" >&2
-          protocol="smtps"
-          starttls="no"
-          if [ "$email_smtp_port" = "587" ]; then
-            protocol="smtp"
-            starttls="yes"
-          fi
-          cat > /tmp/muttrc <<'EOF'
+
+        cat > /tmp/muttrc <<EOF
 set from = "$email_from"
 set realname = "LND Backup"
 set smtp_url = "$protocol://$email_smtp_user@$email_smtp_server:$email_smtp_port/"
@@ -385,11 +426,16 @@ set smtp_pass = "$email_smtp_pass"
 set ssl_starttls = $starttls
 set ssl_force_tls = yes
 EOF
-          echo "Backup attached." | mutt -F /tmp/muttrc -d 4 -s "LND Channel Backup $(date -Iseconds)" -a "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" -- "$email_to" && \\
-          echo "[$(date -Iseconds)] ✅ Backed up to email $email_to" >&2 || \\
-          echo "[$(date -Iseconds)] ❌ Failed to back up to email. Check /tmp/muttrc and mutt debug logs." >&2
+
+        if echo "Backup attached." | mutt -F /tmp/muttrc -s "LND Channel Backup $(date -Iseconds)" -a "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" -- "$email_to"; then
+          echo "[$(date -Iseconds)] ✅ Backed up to email $email_to" >&2
+        else
+          echo "[$(date -Iseconds)] ❌ Failed to send email backup" >&2
         fi
-      done`,
+      fi
+    fi
+  done
+done`,
     ],
   },
   subcontainer: lndSub,
