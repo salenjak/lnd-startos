@@ -1,3 +1,4 @@
+// startos/actions/index.ts
 import { sdk } from '../sdk'
 import { aezeedCipherSeed, confirmSeedBackup, deleteCipherSeed } from './aezeedCipherSeed'
 import { autopilotConfig } from './config/autopilot'
@@ -18,7 +19,9 @@ import { recreateMacaroons } from './recreate-macaroons'
 import { resetWalletTransactions } from './resetTxns'
 import { towerInfo } from './towerInfo'
 import { disableAutoUnlock } from './disableAutoUnlock'
-
+import { addBackupTarget } from './addBackupTarget'
+import { toggleBackupProvider } from './toggleBackupProvider'
+import { manualBackup } from './manualBackup'
 export const actions = sdk.Actions.of()
   .addAction(general)
   .addAction(autopilotConfig)
@@ -39,6 +42,9 @@ export const actions = sdk.Actions.of()
   .addAction(aezeedCipherSeed)
   .addAction(confirmSeedBackup)
   .addAction(deleteCipherSeed)
+  .addAction(addBackupTarget)
+  .addAction(toggleBackupProvider)
+  .addAction(manualBackup)
   .addAction(recreateMacaroons)
   .addAction(importUmbrel)
   .addAction(setExternalGateway)

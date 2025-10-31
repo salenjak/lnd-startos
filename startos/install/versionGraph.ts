@@ -1,10 +1,10 @@
+// startos/install/versionGraph.ts
 import { utils, VersionGraph } from '@start9labs/start-sdk'
 import { current, other } from './versions'
 import { storeJson } from '../fileModels/store.json'
 import { lndConfFile } from '../fileModels/lnd.conf'
 import { lndConfDefaults, randomPassword } from '../utils'
 import { access } from 'fs/promises'
-
 export const versionGraph = VersionGraph.of({
   current,
   other,
@@ -22,11 +22,11 @@ export const versionGraph = VersionGraph.of({
     } catch {
       console.log("Couldn't find existing store.json. Using defaults")
       await storeJson.write(effects, {
+        restore: false,
         aezeedCipherSeed: null,
         walletPassword: Buffer.from(utils.getDefaultString(randomPassword), 'utf8').toString('base64'),
         recoveryWindow: 2_500,
         bitcoindSelected: false,
-        restore: false,
         resetWalletTransactions: false,
         watchtowers: [],
         walletInitialized: false,
@@ -37,6 +37,13 @@ export const versionGraph = VersionGraph.of({
         seedBackupConfirmed: false,
         passwordBackupConfirmed: false,
         seedBackupIndices: null,
+        rcloneConfig: null,
+        selectedRcloneRemotes: null,
+        channelAutoBackupEnabled: false,
+        emailBackup: null,
+        enabledRemotes: null,
+        emailEnabled: false,
+        backupStatus: null,
       })
     }
   },
