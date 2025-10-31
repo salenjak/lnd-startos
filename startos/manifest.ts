@@ -3,8 +3,12 @@ import { SDKImageInputSpec } from '@start9labs/start-sdk/base/lib/types/Manifest
 
 const BUILD = process.env.BUILD || ''
 
-const arch =
-  BUILD === 'x86_64' || BUILD === 'aarch64' ? [BUILD] : ['x86_64', 'aarch64']
+const arch: ['x86_64'] | ['aarch64'] | ['x86_64', 'aarch64'] | ['aarch64', 'x86_64'] =
+  BUILD === 'x86_64'
+    ? ['x86_64']
+    : BUILD === 'aarch64'
+      ? ['aarch64']
+      : ['x86_64', 'aarch64']
 
 export const manifest = setupManifest({
   id: 'lnd',
@@ -24,13 +28,16 @@ export const manifest = setupManifest({
   },
   volumes: ['main'],
   images: {
-    lnd: {
-      source: {
-        dockerTag: './Dockerfile',
+  lnd: {
+    source: {
+      dockerBuild: {
+        workdir: '.',
+        dockerfile: 'Dockerfile',
       },
-      arch,
-    } as SDKImageInputSpec,
+    },
+    arch: arch as any,
   },
+},
   hardwareRequirements: {
     arch,
   },
