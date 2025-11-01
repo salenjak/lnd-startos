@@ -7,8 +7,8 @@ const VALID_PROVIDERS = ['gdrive', 'dropbox', 'nextcloud', 'sftp', 'email'] as c
 export const addBackupTarget = sdk.Action.withInput(
   'add-backup-target',
   async ({ effects }) => ({
-    name: 'Add Cloud Backup Target',
-    description: 'Add and configure backup targets for your channel state. You can select multiple providers.',
+    name: 'Auto-Backup Channels',
+    description: 'Add and configure backup targets for your channel.backup file. You can select multiple providers (Nextcloud, Dropbox, Google, Email, SFTP) and multiple email recipients.',
     warning: null,
     allowedStatuses: 'only-running',
     group: 'Backup',

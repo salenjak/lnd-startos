@@ -53,7 +53,7 @@ export const confirmPasswordBackup = sdk.Action.withInput(
     if (password !== decodedStorePassword) {
       throw new Error('Password does not match.')
     }
-    await storeJson.merge(effects, { passwordBackupConfirmed: true })
+    await storeJson.merge(effects, { passwordBackupConfirmed: true }, { allowRestart: false } as any)
     console.log('Password backup confirmed')
     return {
       version: '1',

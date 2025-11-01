@@ -5,8 +5,8 @@ import { lndDataDir } from '../utils'
 export const manualBackup = sdk.Action.withoutInput(
   'manual-backup',
   async ({ effects }) => ({
-    name: 'Manual Channel Backup',
-    description: 'Manually trigger a backup by exporting the channel.backup file.',
+    name: 'Test Channels Auto-Backup',
+    description: 'Manually trigger a backup of the channel.backup file (lncli exportchanbackup --all).',
     warning: null,
     allowedStatuses: 'only-running',
     group: 'Backup',
