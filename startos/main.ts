@@ -341,10 +341,10 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
     })
     
 .addDaemon('channel-backup-watcher', {
-      exec: {
-        command: [
-          'sh', '-c',
-          `SHOULD_EXIT=0
+  exec: {
+    command: [
+      'sh', '-c',
+      `SHOULD_EXIT=0
 trap 'SHOULD_EXIT=1' TERM INT
 # Wait for store.json
 while [ ! -f "${lndDataDir}/store.json" ] && [ $SHOULD_EXIT -eq 0 ]; do sleep 2; done
@@ -383,7 +383,7 @@ while [ $SHOULD_EXIT -eq 0 ]; do
       break
     fi
     # Wait for channel.backup change
-    inotifywait -q -t 5 -e modify,move,create,attrib "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" 2>/dev/null || true
+    inotifywait -q -t 5 -e modify,move,create "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" 2>/dev/null || true
     INOTIFY_RC=$?
     if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
     if [ $INOTIFY_RC -eq 2 ]; then continue; fi # timeout
@@ -430,20 +430,20 @@ EOF
   done
 done
 if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi`,
-        ],
-      },
-      subcontainer: lndSub,
-      ready: {
-        display: 'Channel Backup Status',
-        fn: async () => {
-          const store = await storeJson.read().const(effects)
-          return store?.channelAutoBackupEnabled
-            ? { result: 'success', message: '✅ Active (backing up to cloud)' }
-            : { result: 'disabled', message: '❌ Disabled' }
-        },
-      },
-      requires: ['primary']
-    })
+    ],
+  },
+  subcontainer: lndSub,
+  ready: {
+    display: 'Channel Backup Status',
+    fn: async () => {
+      const store = await storeJson.read().const(effects)
+      return store?.channelAutoBackupEnabled
+        ? { result: 'success', message: '✅ Active (backing up to cloud)' }
+        : { result: 'disabled', message: '❌ Disabled' }
+    },
+  },
+  requires: ['primary']
+})
     .addHealthCheck('sync-progress', {
       requires: ['primary', 'unlock-wallet'],
       ready: {
