@@ -1,7 +1,6 @@
 // startos/actions/manualBackup.ts
 import { sdk } from '../sdk'
 import { lndDataDir } from '../utils'
-import { writeFile } from 'fs/promises'  // Add this import
 
 export const manualBackup = sdk.Action.withoutInput(
   'manual-backup',
@@ -25,17 +24,21 @@ export const manualBackup = sdk.Action.withoutInput(
       }),
       'manual-touch'
     )
-    // Run export without --output_file
-    const res = await sub.exec(['lncli', '--rpcserver=lnd.startos', 'exportchanbackup', '--all'])
+
+    // ✅ Use --output_file — this writes directly inside the container
+    const res = await sub.exec([
+      'lncli',
+      '--rpcserver=lnd.startos',
+      'exportchanbackup',
+      '--all',
+      '--output_file',
+      `${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup`
+    ])
+
     if (res.exitCode !== 0) {
       throw new Error(`Export failed: ${res.stderr}`)
     }
-    // Parse JSON output
-    const data = JSON.parse(res.stdout)
-    // Decode base64 multi backup blob
-    const multiBackup = Buffer.from(data.multi_chan_backup, 'base64')
-    // Write to file inside subcontainer (updates mtime, triggers watcher)
-    await writeFile(`${sub.rootfs}${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup`, multiBackup)
+
     return {
       version: '1',
       title: '✅ Manual Backup Triggered',
