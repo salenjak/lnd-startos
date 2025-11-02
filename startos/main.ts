@@ -354,7 +354,7 @@ while [ $SHOULD_EXIT -eq 0 ]; do
   inotifywait -q -t 5 -e modify "${lndDataDir}/store.json" 2>/dev/null
   INOTIFY_RC=$?
   if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-  if [ $INOTIFY_RC -eq 2 ]; then continue; fi # timeout
+  if [ $INOTIFY_RC -ne 0 ]; then continue; fi  # Skip on timeout (2) or error (1)
   enabled=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/store.json")
   if [ "$enabled" != "true" ]; then
     sleep 10
@@ -383,10 +383,10 @@ while [ $SHOULD_EXIT -eq 0 ]; do
       break
     fi
     # Wait for channel.backup change
-    inotifywait -q -t 5 -e modify,move,create "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" 2>/dev/null || true
+    inotifywait -q -t 5 -e modify,move,create "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" 2>/dev/null
     INOTIFY_RC=$?
     if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-    if [ $INOTIFY_RC -eq 2 ]; then continue; fi # timeout
+    if [ $INOTIFY_RC -ne 0 ]; then continue; fi  # Skip on timeout (2) or error (1)
     echo "[$(date -Iseconds)] 🔄 Channel backup file changed. Triggering backup..." >&2
     # Perform rclone backups
     for remote in $remotes; do
