@@ -1,4 +1,4 @@
-// main.ts
+// main.ts-v6
 import { sdk } from './sdk'
 import { FileHelper } from '@start9labs/start-sdk'
 import {

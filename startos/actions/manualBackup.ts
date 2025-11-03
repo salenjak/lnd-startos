@@ -1,4 +1,4 @@
-// startos/actions/manualBackup.ts
+// startos/actions/manualBackup.ts-v6
 import { sdk } from '../sdk'
 import { lndDataDir } from '../utils'
 
@@ -13,7 +13,8 @@ export const manualBackup = sdk.Action.withoutInput(
     visibility: 'enabled',
   }),
   async ({ effects }) => {
-    const sub = await sdk.SubContainer.of(
+    // ✅ Use withTemp to ensure subcontainer is cleaned up
+    const res = await sdk.SubContainer.withTemp(
       effects,
       { imageId: 'lnd' },
       sdk.Mounts.of().mountVolume({
@@ -22,23 +23,21 @@ export const manualBackup = sdk.Action.withoutInput(
         mountpoint: lndDataDir,
         readonly: false,
       }),
-      'manual-touch'
+      'manual-backup', // unique name, but temporary
+      async (sub) => {
+        return await sub.exec([
+          'lncli',
+          '--rpcserver=lnd.startos',
+          'exportchanbackup',
+          '--all',
+          '--output_file',
+          `${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup`
+        ])
+      }
     )
-
-    // ✅ Use --output_file — this writes directly inside the container
-    const res = await sub.exec([
-      'lncli',
-      '--rpcserver=lnd.startos',
-      'exportchanbackup',
-      '--all',
-      '--output_file',
-      `${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup`
-    ])
-
     if (res.exitCode !== 0) {
       throw new Error(`Export failed: ${res.stderr}`)
     }
-
     return {
       version: '1',
       title: '✅ Manual Backup Triggered',
