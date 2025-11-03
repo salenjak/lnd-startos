@@ -1,4 +1,4 @@
-// File: /home/smole/Downloads/racku/startos/actions/addBackupTarget.ts-v6
+// File: /home/smole/Downloads/racku/startos/actions/addBackupTarget.ts-v7
 import { sdk } from '../sdk'
 import { storeJson } from '../fileModels/store.json'
 const VALID_PROVIDERS = ['gdrive', 'dropbox', 'nextcloud', 'sftp', 'email'] as const

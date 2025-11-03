@@ -1,4 +1,4 @@
-// startos/actions/manualBackup.ts-v6
+// startos/actions/manualBackup.ts-v7
 import { sdk } from '../sdk'
 import { lndDataDir } from '../utils'
 
