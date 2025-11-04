@@ -12,6 +12,8 @@ import { restPort } from './interfaces'
 import { lndConfFile } from './fileModels/lnd.conf'
 import { manifest } from './manifest'
 import { storeJson } from './fileModels/store.json'
+import { customConfigJson } from './fileModels/custom-config.json'
+
 import { base64 } from 'rfc4648'
 export const main = sdk.setupMain(async ({ effects, started }) => {
   console.log('Starting LND!')
@@ -346,49 +348,41 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
       'sh', '-c',
       `SHOULD_EXIT=0
 trap 'SHOULD_EXIT=1' TERM INT
-# Wait for store.json
-while [ ! -f "${lndDataDir}/store.json" ] && [ $SHOULD_EXIT -eq 0 ]; do sleep 2; done
+# Wait for custom-config.json
+while [ ! -f "${lndDataDir}/custom-config.json" ] && [ $SHOULD_EXIT -eq 0 ]; do sleep 2; done
 if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
 # Main config watch loop
 while [ $SHOULD_EXIT -eq 0 ]; do
-  inotifywait -q -t 5 -e modify "${lndDataDir}/store.json" 2>/dev/null
+  inotifywait -q -t 5 -e modify "${lndDataDir}/custom-config.json" 2>/dev/null
   INOTIFY_RC=$?
   if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-  if [ $INOTIFY_RC -ne 0 ]; then continue; fi  # Skip on timeout (2) or error (1)
-  enabled=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/store.json")
+  if [ $INOTIFY_RC -ne 0 ]; then continue; fi
+  enabled=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/custom-config.json")
   if [ "$enabled" != "true" ]; then
     sleep 10
     continue
   fi
-  # Load config
-  rclone_b64=$(jq -r '.rcloneConfig // empty' "${lndDataDir}/store.json" 2>/dev/null || true)
+  rclone_b64=$(jq -r '.rcloneConfig // empty' "${lndDataDir}/custom-config.json" 2>/dev/null || true)
   if [ -n "$rclone_b64" ]; then
     echo "$rclone_b64" | base64 -d > /tmp/rclone.conf
   fi
-  remotes=$(jq -r '.selectedRcloneRemotes // empty | .[]' "${lndDataDir}/store.json" 2>/dev/null || true)
-  email_to=$(jq -r '.emailBackup.to // empty' "${lndDataDir}/store.json")
-  email_from=$(jq -r '.emailBackup.from // empty' "${lndDataDir}/store.json")
+  remotes=$(jq -r '.selectedRcloneRemotes // empty | .[]' "${lndDataDir}/custom-config.json" 2>/dev/null || true)
+  email_to=$(jq -r '.emailBackup.to // empty' "${lndDataDir}/custom-config.json")
+  email_from=$(jq -r '.emailBackup.from // empty' "${lndDataDir}/custom-config.json")
   if [ -z "$remotes" ] && [ -z "$email_to" ]; then
     sleep 10
     continue
   fi
-  # Wait for channel.backup to exist
   while [ ! -f "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" ] && [ $SHOULD_EXIT -eq 0 ]; do sleep 5; done
   if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-  # Inner file watch loop — runs as long as backup is enabled
   while [ $SHOULD_EXIT -eq 0 ]; do
-    # Re-check enabled status every loop to allow graceful exit
-    enabled_now=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/store.json")
-    if [ "$enabled_now" != "true" ]; then
-      break
-    fi
-    # Wait for channel.backup change
+    enabled_now=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/custom-config.json")
+    if [ "$enabled_now" != "true" ]; then break; fi
     inotifywait -q -t 5 -e modify,move,create "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" 2>/dev/null
     INOTIFY_RC=$?
     if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-    if [ $INOTIFY_RC -ne 0 ]; then continue; fi  # Skip on timeout (2) or error (1)
+    if [ $INOTIFY_RC -ne 0 ]; then continue; fi
     echo "[$(date -Iseconds)] 🔄 Channel backup file changed. Triggering backup..." >&2
-    # Perform rclone backups
     for remote in $remotes; do
       if RCLONE_CONFIG=/tmp/rclone.conf rclone copy "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" "$remote" --log-level=INFO; then
         echo "[$(date -Iseconds)] ✅ Backed up to $remote" >&2
@@ -396,22 +390,16 @@ while [ $SHOULD_EXIT -eq 0 ]; do
         echo "[$(date -Iseconds)] ❌ Failed to back up to $remote" >&2
       fi
     done
-    # Perform email backup
     if [ -n "$email_to" ]; then
-      email_smtp_server=$(jq -r '.emailBackup.smtp_server // "smtp.gmail.com"' "${lndDataDir}/store.json")
-      email_smtp_port=$(jq -r '.emailBackup.smtp_port // 465' "${lndDataDir}/store.json")
-      email_smtp_user=$(jq -r '.emailBackup.smtp_user // empty' "${lndDataDir}/store.json")
-      email_smtp_pass=$(jq -r '.emailBackup.smtp_pass // empty' "${lndDataDir}/store.json")
+      email_smtp_server=$(jq -r '.emailBackup.smtp_server // "smtp.gmail.com"' "${lndDataDir}/custom-config.json")
+      email_smtp_port=$(jq -r '.emailBackup.smtp_port // 465' "${lndDataDir}/custom-config.json")
+      email_smtp_user=$(jq -r '.emailBackup.smtp_user // empty' "${lndDataDir}/custom-config.json")
+      email_smtp_pass=$(jq -r '.emailBackup.smtp_pass // empty' "${lndDataDir}/custom-config.json")
       if [ -z "$email_smtp_pass" ]; then
         echo "[$(date -Iseconds)] ❌ Email backup skipped: missing SMTP password" >&2
       else
-        nslookup "$email_smtp_server" >/dev/null 2>&1 || echo "[$(date -Iseconds)] ⚠️ DNS lookup failed for $email_smtp_server" >&2
-        protocol="smtps"
-        starttls="no"
-        if [ "$email_smtp_port" = "587" ]; then
-          protocol="smtp"
-          starttls="yes"
-        fi
+        protocol="smtps"; starttls="no"
+        if [ "$email_smtp_port" = "587" ]; then protocol="smtp"; starttls="yes"; fi
         cat > /tmp/muttrc <<EOF
 set from = "$email_from"
 set realname = "LND Backup"
@@ -436,8 +424,8 @@ if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi`,
   ready: {
     display: 'Channel Backup Status',
     fn: async () => {
-      const store = await storeJson.read().const(effects)
-      return store?.channelAutoBackupEnabled
+      const config = await customConfigJson.read().once()
+      return config?.channelAutoBackupEnabled
         ? { result: 'success', message: '✅ Active (backing up to cloud)' }
         : { result: 'disabled', message: '❌ Disabled' }
     },

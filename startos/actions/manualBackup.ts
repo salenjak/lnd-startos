@@ -1,4 +1,4 @@
-// startos/actions/manualBackup.ts-v7
+// actions/manualBackup.ts
 import { sdk } from '../sdk'
 import { lndDataDir } from '../utils'
 
@@ -13,7 +13,6 @@ export const manualBackup = sdk.Action.withoutInput(
     visibility: 'enabled',
   }),
   async ({ effects }) => {
-    // ✅ Use withTemp to ensure subcontainer is cleaned up
     const res = await sdk.SubContainer.withTemp(
       effects,
       { imageId: 'lnd' },
@@ -23,7 +22,7 @@ export const manualBackup = sdk.Action.withoutInput(
         mountpoint: lndDataDir,
         readonly: false,
       }),
-      'manual-backup', // unique name, but temporary
+      'manual-backup',
       async (sub) => {
         return await sub.exec([
           'lncli',
