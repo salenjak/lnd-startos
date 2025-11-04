@@ -6,13 +6,14 @@ export const manualBackup = sdk.Action.withoutInput(
   'manual-backup',
   async ({ effects }) => ({
     name: 'Test Channels Auto-Backup',
-    description: 'Manually trigger a backup of the channel.backup file.',
+    description: 'Manually trigger a backup of the channel.backup file (lncli exportchanbackup --all).',
     warning: null,
     allowedStatuses: 'only-running',
     group: 'Backup',
     visibility: 'enabled',
   }),
   async ({ effects }) => {
+    // ✅ Use withTemp + touch to ensure reliable inotify event
     const res = await sdk.SubContainer.withTemp(
       effects,
       { imageId: 'lnd' },
@@ -24,34 +25,16 @@ export const manualBackup = sdk.Action.withoutInput(
       }),
       'manual-backup',
       async (sub) => {
-        // Export the binary backup
-        const exportRes = await sub.exec([
-          'lncli',
-          '--rpcserver=lnd.startos',
-          'exportchanbackup',
-          '--all',
-          '--output_file',
-          `${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup`
-        ])
-
-        if (exportRes.exitCode !== 0) {
-          throw new Error(`Export failed: ${exportRes.stderr}`)
-        }
-
-        // Safely trigger inotify MODIFY without corrupting binary
-        const touchRes = await sub.exec([
+        return await sub.exec([
           'sh', '-c',
-          `touch -c -m "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup"`
+          `lncli --rpcserver=lnd.startos exportchanbackup --all --output_file "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" && \
+           touch "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup"`
         ])
-
-        if (touchRes.exitCode !== 0) {
-          console.warn('⚠️ Failed to touch channel.backup (file may not exist yet). Backup watcher may not trigger.')
-        }
-
-        return { exitCode: 0, stdout: '', stderr: '' }
       }
     )
-
+    if (res.exitCode !== 0) {
+      throw new Error(`Export failed: ${res.stderr}`)
+    }
     return {
       version: '1',
       title: '✅ Manual Backup Triggered',
