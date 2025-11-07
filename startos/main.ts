@@ -615,12 +615,12 @@ if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi`,
           ) {
             if (autoUnlockEnabled) {
               return {
-                message: `Wallet is locked, but auto-unlock is enabled. \u{1F511} Password is not correct! Go to "Actions ⇢ Security ⇢ Auto-Unlock Wallet" and enter correct password.`,
+                message: `Wallet is locked, but auto-unlock is enabled. \u{1F511} Password is not correct! Go to "Actions ⇢ Security ⇢ Wallet - Auto-Unlock" and enter correct password.`,
                 result: 'failure',
               };
             } else {
               return {
-                message: 'Wallet is locked as auto-unlock is disabled. Go to \u{21D3} Tasks or "Actions ⇢ Security ⇢ Unlock Wallet Manually" and enter correct password.',
+                message: 'Wallet is locked as auto-unlock is disabled. Go to \u{21D3} Tasks or "Actions ⇢ Security ⇢ Wallet - Manual Unlock" and enter correct password.',
                 result: 'failure',
               };
             }

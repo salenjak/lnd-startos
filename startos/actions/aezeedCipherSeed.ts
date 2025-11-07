@@ -85,7 +85,7 @@ export const confirmSeedBackup = sdk.Action.withInput(
    //   desc += ` (You will be asked for words at positions: ${positions})`
    // }
     return {
-      name: 'Confirm Aezeed Seed Backup',
+      name: 'Aezeed Cipher Seed - Backup',
       description: desc,
       warning: 'Ensure you have securely backed up your seed before confirming.',
       allowedStatuses: 'any',
@@ -187,7 +187,7 @@ export const deleteCipherSeed = sdk.Action.withoutInput(
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     return {
-      name: 'Delete Aezeed Cipher Seed',
+      name: 'Aezeed Cipher Seed - Delete',
       description: 'Delete the Aezeed Cipher Seed from the server (store.json). If not deleted, anyone with physical access to the server can reflash Start9, set a new master password, convert the Aezeed seed to an HD key, and then import that key into an external wallet to steal your on-chain funds.',
       warning: 'Ensure you have securely backed up your seed before deleting it. This action cannot be undone.',
       allowedStatuses: 'any',

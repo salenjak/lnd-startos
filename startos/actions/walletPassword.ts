@@ -18,7 +18,7 @@ export const manualWalletUnlock = sdk.Action.withInput(
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     return {
-      name: 'Unlock Wallet Manually',
+      name: 'Wallet - Manual Unlock',
       description: 'Enter your wallet password to unlock LND manually.',
       warning: 'Enter the correct password to unlock your wallet.',
       allowedStatuses: 'any',
@@ -29,7 +29,7 @@ export const manualWalletUnlock = sdk.Action.withInput(
   // --- Input Specification ---
   InputSpec.of({
     password: Value.text({
-      name: 'Wallet Password',
+      name: 'Wallet - Password',
       description: 'Enter your wallet password to unlock LND.',
       required: true,
       masked: true,
@@ -120,7 +120,7 @@ type Input = {
 export const walletPassword = sdk.Action.withInput(
   'wallet-password',
   async ({ effects }: { effects: Effects }) => ({
-    name: 'Wallet Password',
+    name: 'Wallet - Password',
     description: 'Display / Change the password used to unlock your LND wallet.',
     warning: null,
     allowedStatuses: 'any',

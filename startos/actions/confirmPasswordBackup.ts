@@ -13,7 +13,7 @@ export const confirmPasswordBackup = sdk.Action.withInput(
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     return {
-      name: 'Confirm Password Backup',
+      name: 'Wallet - Password Backup',
       description: 'Confirm you have backed up your wallet password.',
       warning: 'Ensure you have securely backed up your password before confirming.',
       allowedStatuses: 'any',

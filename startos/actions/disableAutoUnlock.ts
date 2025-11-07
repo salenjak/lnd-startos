@@ -22,12 +22,12 @@ export const disableAutoUnlock = sdk.Action.withInput(
     let actionWarning = ''
 
     if (currentState) {
-      actionName = `Auto-Unlock Wallet: ENABLED \u{1F513}`
+      actionName = `Wallet - Auto-Unlock: ENABLED \u{1F513}`
       actionDescription = `Enable / Disable auto-unlocking of the LND wallet on startup. The disabled state protects your on-chain and off-chain Bitcoin in case of server theft. If enabled, anyone with physical access to the server can reflash StartOS, set a new master password, and use apps (RTL, ThunderHub, etc.) or other methods to steal funds, since the LND wallet.db is automatically unlocked with the password from the store.json file.
       <div>⚠️IMPORTANT: Confirm password backup to disable auto-unlocking because password will be deleted from the server.</div>`
       actionWarning = 'Disabling auto-unlock will delete your password from the server and require manual unlocking via the "Unlock Wallet" action below or in the Dashboard / Tasks when starting LND.'
     } else {
-      actionName = `Auto-Unlock Wallet: DISABLED \u{1F512}`
+      actionName = `Wallet - Auto-Unlock: DISABLED \u{1F512}`
       actionDescription = `Enable / Disable auto-unlocking of the LND wallet on startup. The disabled state protects your on-chain and off-chain Bitcoin in case of server theft. If enabled, anyone with physical access to the server can reflash StartOS, set a new master password, and use apps (RTL, ThunderHub, etc.) or other methods to steal funds, since the LND wallet.db is automatically unlocked with the password from the store.json file.
       <div>⚠️IMPORTANT: Enabling auto-unlock stores password on server, risking fund theft if server is stolen.</div>`
       if (walletPasswordExists) {
@@ -107,7 +107,7 @@ export const disableAutoUnlock = sdk.Action.withInput(
           message: `<div>ℹ️ Wallet is now locked as auto-unlock is disabled.</div>
                     <div>The service is restarting to apply changes.</div>
                     <table class="g-table"><thead><tr><th>⚠️ IMPORTANT: Every time LND restart you need to:</th></tr></thead><tbody>
-                    <tr class="ng-star-inserted"><td>1️⃣ Go to "Dashboard ⇢ Tasks" or "Actions ⇢ Security ⇢ Unlock Wallet Manually".</td></tr>
+                    <tr class="ng-star-inserted"><td>1️⃣ Go to "Dashboard ⇢ Tasks" or "Actions ⇢ Security ⇢ Wallet - Manual Unlock".</td></tr>
                     <tr class="ng-star-inserted"><td>2️⃣ Enter password to manually unlock the wallet</td></tr></tbody></table>`,
           result: null,
         }
