@@ -261,17 +261,15 @@ export const addBackupTarget = sdk.Action.withInput(
     ),
   }),
   async ({ effects }) => {
-    const config = (await customConfigJson.read().once())!
+    const config = (await customConfigJson.read().once().catch(() => ({}))) as any
     const existingConf = config.rcloneConfig ? Buffer.from(config.rcloneConfig, 'base64').toString('utf8') : ''
     const sections = parseRcloneConf(existingConf)
     const getPath = (provider: string) => config.selectedRcloneRemotes?.find((r: string) => r.startsWith(provider + ':'))?.split(':')[1] || 'lnd-backups'
-
     // ✅ FIX: Use selectedRcloneRemotes, not !!sections[p]
     const selectedProviders = VALID_PROVIDERS.filter(p => {
       if (p === 'email') return !!config.emailBackup
       return config.selectedRcloneRemotes?.some((r: string) => r.startsWith(p + ':'))
     }) as typeof VALID_PROVIDERS[number][]
-
     return {
       providers: selectedProviders,
       google: {
@@ -311,9 +309,7 @@ export const addBackupTarget = sdk.Action.withInput(
     try {
       const rawProviders = input.providers || []
       const providers = rawProviders.filter(p => VALID_PROVIDERS.includes(p as any)) as typeof VALID_PROVIDERS[number][]
-
-      const config = (await customConfigJson.read().once())!
-
+      const config = (await customConfigJson.read().once().catch(() => ({}))) as any
       if (providers.length === 0) {
         await customConfigJson.merge(effects, {
           channelAutoBackupEnabled: false,
@@ -330,36 +326,35 @@ export const addBackupTarget = sdk.Action.withInput(
           result: null,
         }
       }
-
       let updates: any = { channelAutoBackupEnabled: true }
       let existingConf = config.rcloneConfig ? Buffer.from(config.rcloneConfig, 'base64').toString('utf8') : ''
       let sections = parseRcloneConf(existingConf)
       let newSections = ''
       let newRemotes: string[] = []
       let newEnabled: string[] = []
-
       const previousCloudProviders = VALID_PROVIDERS.filter(p => p !== 'email' && !!sections[p]) as Exclude<typeof VALID_PROVIDERS[number], 'email'>[]
+      let filteredSelected = config.selectedRcloneRemotes || []
+      let filteredEnabled = config.enabledRemotes || []
       for (const prevProvider of previousCloudProviders) {
         if (!providers.includes(prevProvider)) {
           existingConf = removeSection(existingConf, prevProvider)
-          // ✅ FIX: Safe .filter with type guard
-          updates.selectedRcloneRemotes = (config.selectedRcloneRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith(prevProvider + ':'))
-          updates.enabledRemotes = (config.enabledRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith(prevProvider + ':'))
+          filteredSelected = filteredSelected.filter((r: unknown) => typeof r === 'string' && !r.startsWith(prevProvider + ':'))
+          filteredEnabled = filteredEnabled.filter((r: unknown) => typeof r === 'string' && !r.startsWith(prevProvider + ':'))
+          delete sections[prevProvider]
         }
       }
-
+      updates.selectedRcloneRemotes = filteredSelected
+      updates.enabledRemotes = filteredEnabled
       if (!providers.includes('email') && config.emailBackup) {
         updates.emailBackup = null
         updates.emailEnabled = false
       }
-
       providers.forEach((provider: typeof VALID_PROVIDERS[number]) => {
         if (provider !== 'email') {
           const remoteName = provider
           const existingSection = sections[remoteName] || {}
           let path: string
           let newSectionLines: string[] = [`[${remoteName}]`]
-
           switch (provider) {
             case 'gdrive': {
               path = input.google['gdrive-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
@@ -381,8 +376,8 @@ export const addBackupTarget = sdk.Action.withInput(
               newSectionLines.push(`service_account_credentials = ${JSON.stringify(keyObj)}`)
               if (teamDrive) newSectionLines.push(`team_drive = ${teamDrive}`)
               if (folderId && !teamDrive) newSectionLines.push(`root_folder_id = ${folderId}`)
-              updates.selectedRcloneRemotes = (config.selectedRcloneRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:'))
-              updates.enabledRemotes = (config.enabledRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:'))
+              updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:'))
+              updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:'))
               break
             }
             case 'dropbox': {
@@ -397,8 +392,8 @@ export const addBackupTarget = sdk.Action.withInput(
               }
               newSectionLines.push('type = dropbox')
               newSectionLines.push(`token = ${JSON.stringify(tokenObj)}`)
-              updates.selectedRcloneRemotes = (config.selectedRcloneRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
-              updates.enabledRemotes = (config.enabledRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
+              updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
+              updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
               break
             }
             case 'nextcloud': {
@@ -412,14 +407,14 @@ export const addBackupTarget = sdk.Action.withInput(
               } else if (passValue && !isObscured(passValue)) {
                 passValue = obscure(passValue)
               }
-              if (!url || !user || !passValue) throw new Error('Nextcloud URL, username, and password are required.')
+              if (!url.trim() || !user.trim() || !passValue.trim()) throw new Error('Nextcloud URL, username, and password are required.')
               newSectionLines.push('type = webdav')
               newSectionLines.push(`url = ${url}`)
               newSectionLines.push('vendor = nextcloud')
               newSectionLines.push(`user = ${user}`)
               newSectionLines.push(`pass = ${passValue}`)
-              updates.selectedRcloneRemotes = (config.selectedRcloneRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
-              updates.enabledRemotes = (config.enabledRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
+              updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
+              updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
               break
             }
             case 'sftp': {
@@ -435,9 +430,9 @@ export const addBackupTarget = sdk.Action.withInput(
               } else if (passValue && !isObscured(passValue)) {
                 passValue = obscure(passValue)
               }
-              const hasPassword = !!passValue
-              const hasKey = !!key
-              if (!host || !user) throw new Error('SFTP host and username are required.')
+              const hasPassword = !!passValue.trim()
+              const hasKey = !!key.trim()
+              if (!host.trim() || !user.trim()) throw new Error('SFTP host and username are required.')
               if (!hasPassword && !hasKey) throw new Error('SFTP requires password or key.')
               newSectionLines.push('type = sftp')
               newSectionLines.push(`host = ${host}`)
@@ -446,12 +441,11 @@ export const addBackupTarget = sdk.Action.withInput(
               newSectionLines.push('key_use_agent = false')
               if (hasKey) newSectionLines.push(`key_pem = ${key.replace(/\n/g, '\\n')}`)
               if (hasPassword && !hasKey) newSectionLines.push(`pass = ${passValue}`)
-              updates.selectedRcloneRemotes = (config.selectedRcloneRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
-              updates.enabledRemotes = (config.enabledRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
+              updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
+              updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
               break
             }
           }
-
           newSections += newSectionLines.join('\n') + '\n'
           existingConf = removeSection(existingConf, remoteName)
           const remotePath = `${remoteName}:${path}`
@@ -464,32 +458,31 @@ export const addBackupTarget = sdk.Action.withInput(
           const port = input.email['email-smtp-port']?.trim() || config.emailBackup?.smtp_port?.toString() || '465'
           const user = input.email['email-smtp-user']?.trim() || config.emailBackup?.smtp_user || ''
           const pass = input.email['email-smtp-pass']?.trim() || config.emailBackup?.smtp_pass || ''
-          if (!from || !to || !user || !pass) throw new Error('Email from, to, SMTP user, and password are required.')
+          if (!from.trim() || !to.trim() || !user.trim() || !pass.trim()) throw new Error('Email from, to, SMTP user, and password are required.')
           updates.emailBackup = { from, to, smtp_server: server, smtp_port: parseInt(port), smtp_user: user, smtp_pass: pass }
           updates.emailEnabled = true
         }
       })
-
       const finalConf = (existingConf.trim() + '\n' + newSections.trim()).trim()
       if (finalConf) {
         updates.rcloneConfig = Buffer.from(finalConf, 'utf8').toString('base64')
+      } else {
+        updates.rcloneConfig = null
       }
       if (newRemotes.length) {
-        updates.selectedRcloneRemotes = [...(updates.selectedRcloneRemotes || config.selectedRcloneRemotes || []), ...newRemotes]
+        updates.selectedRcloneRemotes = [...updates.selectedRcloneRemotes, ...newRemotes]
       }
       if (newEnabled.length) {
-        updates.enabledRemotes = [...(updates.enabledRemotes || config.enabledRemotes || []), ...newEnabled]
+        updates.enabledRemotes = [...updates.enabledRemotes, ...newEnabled]
       }
-
       await customConfigJson.merge(effects, updates)
-      const finalConfig = await customConfigJson.read().once()
+      const finalConfig = await customConfigJson.read().once().catch(() => ({})) as any
       await sdk.setHealth(effects, {
         id: 'channel-backup-watcher',
         name: 'Channel Backup Status',
         message: finalConfig?.channelAutoBackupEnabled ? '✅ Active (backing up to cloud)' : '❌ Disabled',
         result: finalConfig?.channelAutoBackupEnabled ? 'success' : 'disabled',
       })
-
       return {
         version: '1',
         title: '✅ Backup Targets Added',
