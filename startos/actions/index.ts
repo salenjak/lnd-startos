@@ -20,7 +20,6 @@ import { resetWalletTransactions } from './resetTxns'
 import { towerInfo } from './towerInfo'
 import { disableAutoUnlock } from './disableAutoUnlock'
 import { addBackupTarget } from './addBackupTarget'
-import { toggleBackupProvider } from './toggleBackupProvider'
 import { manualBackup } from './manualBackup'
 export const actions = sdk.Actions.of()
   .addAction(general)
@@ -43,7 +42,6 @@ export const actions = sdk.Actions.of()
   .addAction(confirmSeedBackup)
   .addAction(deleteCipherSeed)
   .addAction(addBackupTarget)
-  .addAction(toggleBackupProvider)
   .addAction(manualBackup)
   .addAction(recreateMacaroons)
   .addAction(importUmbrel)
