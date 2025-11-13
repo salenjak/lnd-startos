@@ -346,126 +346,75 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
   exec: {
     command: [
       'sh', '-c',
-      `SHOULD_EXIT=0
-trap 'SHOULD_EXIT=1' TERM INT
-# Wait for custom-config.json
-while [ ! -f "${lndDataDir}/custom-config.json" ] && [ $SHOULD_EXIT -eq 0 ]; do sleep 2; done
-if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-# Main loop
-while [ $SHOULD_EXIT -eq 0 ]; do
-  # 🛡️ RACE CONDITION GUARD: Skip if file is too small
-  if [ ! -s "${lndDataDir}/custom-config.json" ] || [ $(wc -c < "${lndDataDir}/custom-config.json") -lt 50 ]; then
-    sleep 1
-    continue
-  fi
-  enabled=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "false")
-  if [ "$enabled" != "true" ]; then
-    inotifywait -q -t 5 -e modify "${lndDataDir}/custom-config.json" 2>/dev/null
-    INOTIFY_RC=$?
-    if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-    if [ $INOTIFY_RC -ne 0 ]; then continue; fi
-    # custom-config.json modified; loop will recheck enabled
-    continue
-  fi
-  # Enabled is true: Wait for channel.backup
-    # Enabled is true: Ensure channel.backup exists
-  backup_file="${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup"
-  if [ ! -f "$backup_file" ]; then
-    echo "[$(date -Iseconds)] 📁 channel.backup not found. Generating initial backup..." >&2
-    # Try to generate it (non-fatal if fails)
-    if lncli --rpcserver=lnd.startos exportchanbackup --all --output_file "$backup_file" 2>/dev/null; then
-      echo "[$(date -Iseconds)] ✅ Initial channel.backup created." >&2
-    else
-      echo "[$(date -Iseconds)] ⚠️ Failed to create channel.backup (LND may not be ready yet)." >&2
-      # If failed, wait for it to appear naturally (e.g., after channel open or manual test)
-      while [ ! -f "$backup_file" ] && [ $SHOULD_EXIT -eq 0 ]; do sleep 5; done
-      if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-    fi
-  fi
-
-  # ⚠️ DO NOT BACK UP HERE — just record current mtime
-  last_mtime=$(stat -c %Y "$backup_file" 2>/dev/null || echo 0)
-
-  # Inner file watch loop — runs while backup is enabled
-  while [ $SHOULD_EXIT -eq 0 ]; do
-    enabled_now=$(jq -r '.channelAutoBackupEnabled // false' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "false")
-    if [ "$enabled_now" != "true" ]; then break; fi
-    # Watch BOTH files (not quiet, to capture output)
-    output=$(inotifywait -t 5 -e modify,move,create "$backup_file" -e modify "${lndDataDir}/custom-config.json" 2>/dev/null)
-    INOTIFY_RC=$?
-    if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi
-    trigger_backup=0
-    if [ $INOTIFY_RC -eq 0 ]; then
-      # Check if channel.backup was the one that changed
-      if echo "$output" | grep -q "channel.backup MODIFY\|channel.backup CREATE\|channel.backup MOVED_TO"; then
-        trigger_backup=1
-      fi
-    else
-      # On timeout (or other non-event), poll for mtime change as fallback
-      current_mtime=$(stat -c %Y "$backup_file" 2>/dev/null || echo 0)
-      if [ "$current_mtime" != "$last_mtime" ] && [ "$current_mtime" != "0" ]; then
-        trigger_backup=1
-        last_mtime="$current_mtime"
-      fi
-    fi
-    if [ $trigger_backup -eq 1 ]; then
-      echo "[$(date -Iseconds)] 🔄 Channel backup file changed. Triggering backup..." >&2
-      # ✅ READ CONFIG FRESH ON EVERY BACKUP TRIGGER
-      rclone_b64=$(jq -r '.rcloneConfig // empty' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "")
-      if [ -n "$rclone_b64" ]; then
-        echo "$rclone_b64" | base64 -d > /tmp/rclone.conf 2>/dev/null || echo "[$(date -Iseconds)] ⚠️ Failed to decode rcloneConfig" >&2
-      fi
-      remotes=$(jq -r '.selectedRcloneRemotes // empty | .[]' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "")
-      email_to=$(jq -r '.emailBackup.to // empty' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "")
-      email_from=$(jq -r '.emailBackup.from // empty' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "")
-      if [ -z "$remotes" ] && [ "$email_to" = "empty" ]; then
-        echo "[$(date -Iseconds)] ⚠️ No backup targets configured." >&2
-        sleep 10
-        continue
-      fi
-      # Rclone backups
-      for remote in $remotes; do
-        if RCLONE_CONFIG=/tmp/rclone.conf rclone copy "$backup_file" "$remote" --log-level=INFO; then
-          echo "[$(date -Iseconds)] ✅ Backed up to $remote" >&2
-        else
-          echo "[$(date -Iseconds)] ❌ Failed to back up to $remote" >&2
-        fi
-      done
-      # Email backup
-      if [ "$email_to" != "empty" ]; then
-        email_smtp_server=$(jq -r '.emailBackup.smtp_server // "smtp.gmail.com"' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "smtp.gmail.com")
-        email_smtp_port=$(jq -r '.emailBackup.smtp_port // 465' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "465")
-        email_smtp_user=$(jq -r '.emailBackup.smtp_user // empty' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "")
-        email_smtp_pass=$(jq -r '.emailBackup.smtp_pass // empty' "${lndDataDir}/custom-config.json" 2>/dev/null || echo "")
-        if [ -z "$email_smtp_pass" ] || [ "$email_smtp_pass" = "empty" ]; then
-          echo "[$(date -Iseconds)] ❌ Email backup skipped: missing SMTP password" >&2
-        else
-          nslookup "$email_smtp_server" >/dev/null 2>&1 || echo "[$(date -Iseconds)] ⚠️ DNS lookup failed for '$email_smtp_server'" >&2
-          protocol="smtps"
-          starttls="no"
-          if [ "$email_smtp_port" = "587" ]; then
-            protocol="smtp"
-            starttls="yes"
-          fi
-          cat > /tmp/muttrc <<EOF
-set from = "$email_from"
-set realname = "LND Backup"
-set smtp_url = "$protocol://$email_smtp_user@$email_smtp_server:$email_smtp_port/"
-set smtp_pass = "$email_smtp_pass"
-set ssl_starttls = $starttls
-set ssl_force_tls = yes
-EOF
-          if echo "Backup attached." | mutt -F /tmp/muttrc -s "LND Channel Backup $(date -Iseconds)" -a "$backup_file" -- "$email_to"; then
-            echo "[$(date -Iseconds)] ✅ Backed up to email $email_to" >&2
-          else
-            echo "[$(date -Iseconds)] ❌ Failed to send email backup" >&2
-          fi
-        fi
-      fi
-    fi
-  done
-done
-if [ $SHOULD_EXIT -eq 1 ]; then exit 0; fi`,
+      [
+        'SHOULD_EXIT=0',
+        'cleanup() { exit 0; }',
+        'trap cleanup TERM INT',
+        'backup_file="' + lndDataDir + '/data/chain/bitcoin/mainnet/channel.backup"',
+        'config_file="' + lndDataDir + '/custom-config.json"',
+        '',
+        'while [ ! -f "$config_file" ]; do sleep 2; done',
+        '',
+        'while :; do',
+        '  enabled=$(jq -r \'.channelAutoBackupEnabled // false\' "$config_file" 2>/dev/null || echo "false")',
+        '  if [ "$enabled" != "true" ]; then inotifywait -q -t 10 -e modify "$config_file" 2>/dev/null; continue; fi',
+        '  if [ ! -s "$backup_file" ]; then',
+        '    lncli --rpcserver=lnd.startos exportchanbackup --all --output_file "$backup_file" 2>/dev/null || sleep 5',
+        '    continue',
+        '  fi',
+        '  inotifywait -q -e modify,move,create "$backup_file" 2>/dev/null',
+        '  echo "[$(date -Iseconds)] 🔄 Channel backup file changed. Triggering backup..." >&2',
+        '',
+        '  # Load config',
+        '  rclone_b64=$(jq -r \'.rcloneConfig // empty\' "$config_file" 2>/dev/null)',
+        '  [ -n "$rclone_b64" ] && echo "$rclone_b64" | base64 -d > /tmp/rclone.conf 2>/dev/null',
+        '  remotes=$(jq -r \'.selectedRcloneRemotes // empty | .[]\' "$config_file" 2>/dev/null)',
+        '  email_to=$(jq -r \'.emailBackup.to // empty\' "$config_file" 2>/dev/null)',
+        '',
+        '  # Rclone',
+        '  for remote in $remotes; do',
+        '    echo "[$(date -Iseconds)] [RCLONE] Starting backup to $remote..." >&2',
+        '    if RCLONE_CONFIG=/tmp/rclone.conf timeout 12s rclone copy "$backup_file" "$remote" \
+  --log-level=INFO \
+  --contimeout=5s \
+  --timeout=10s \
+  --retries=1; then',
+        '      echo "[$(date -Iseconds)] [RCLONE] ✅ Success" >&2',
+        '    else',
+        '      echo "[$(date -Iseconds)] [RCLONE] ❌ Failed" >&2',
+        '    fi',
+        '  done',
+        '',
+        '  # Email',
+        '  if [ "$email_to" != "empty" ]; then',
+        '    email_from=$(jq -r \'.emailBackup.from // empty\' "$config_file" 2>/dev/null)',
+        '    email_smtp_server=$(jq -r \'.emailBackup.smtp_server // "smtp.gmail.com"\' "$config_file" 2>/dev/null)',
+        '    email_smtp_port=$(jq -r \'.emailBackup.smtp_port // 465\' "$config_file" 2>/dev/null)',
+        '    email_smtp_user=$(jq -r \'.emailBackup.smtp_user // empty\' "$config_file" 2>/dev/null)',
+        '    email_smtp_pass=$(jq -r \'.emailBackup.smtp_pass // empty\' "$config_file" 2>/dev/null)',
+        '    if [ -z "$email_smtp_pass" ] || [ "$email_smtp_pass" = "empty" ]; then',
+        '      echo "[$(date -Iseconds)] [EMAIL] ❌ Skipped: missing password" >&2',
+        '    else',
+        '      echo "[$(date -Iseconds)] [EMAIL] Starting backup to $email_to..." >&2',
+        '      protocol="smtps"; starttls="no"',
+        '      [ "$email_smtp_port" = "587" ] && { protocol="smtp"; starttls="yes"; }',
+        '      cat > /tmp/muttrc <<EOF',
+        'set from = "$email_from"',
+        'set realname = "LND Backup"',
+        'set smtp_url = "$protocol://$email_smtp_user@$email_smtp_server:$email_smtp_port/"',
+        'set smtp_pass = "$email_smtp_pass"',
+        'set ssl_starttls = $starttls',
+        'set ssl_force_tls = yes',
+        'EOF',
+        '      if echo "Backup attached." | mutt -F /tmp/muttrc -s "LND Channel Backup $(date -Iseconds)" -a "$backup_file" -- "$email_to"; then',
+        '        echo "[$(date -Iseconds)] [EMAIL] ✅ Success" >&2',
+        '      else',
+        '        echo "[$(date -Iseconds)] [EMAIL] ❌ Failed" >&2',
+        '      fi',
+        '    fi',
+        '  fi',
+        'done'
+      ].join('\n')
     ],
   },
   subcontainer: lndSub,
