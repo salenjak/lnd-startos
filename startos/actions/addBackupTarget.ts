@@ -1,10 +1,9 @@
+// File: /home/smole/Downloads/racku/startos/actions/addBackupTarget.ts
 // actions/addBackupTarget.ts
 import { sdk } from '../sdk'
 import { customConfigJson } from '../fileModels/custom-config.json'
 import * as crypto from 'crypto'
-
 const VALID_PROVIDERS = ['gdrive', 'dropbox', 'nextcloud', 'sftp', 'email'] as const
-
 function parseRcloneConf(conf: string): Record<string, Record<string, string>> {
   const sections: Record<string, Record<string, string>> = {}
   let currentSection = ''
@@ -20,7 +19,6 @@ function parseRcloneConf(conf: string): Record<string, Record<string, string>> {
   })
   return sections
 }
-
 function removeSection(conf: string, sectionName: string): string {
   const lines = conf.split('\n')
   let inSection = false
@@ -38,7 +36,6 @@ function removeSection(conf: string, sectionName: string): string {
   })
   return newLines.join('\n').trim()
 }
-
 function obscure(plain: string): string {
   const key = Buffer.from('9c935b48730a554d6bfd7c63c886a92bd390198eb8128afbf4de162b8b95f638', 'hex')
   const iv = crypto.randomBytes(16)
@@ -47,7 +44,6 @@ function obscure(plain: string): string {
   let base64 = Buffer.concat([iv, encrypted]).toString('base64')
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
-
 function isObscured(value: string): boolean {
   if (!value) return false
   try {
@@ -58,7 +54,6 @@ function isObscured(value: string): boolean {
     return false
   }
 }
-
 export const addBackupTarget = sdk.Action.withInput(
   'add-backup-target',
   async ({ effects }) => ({
@@ -97,10 +92,10 @@ export const addBackupTarget = sdk.Action.withInput(
       <tr><th>✅ Recommended SMTP Providers</th></tr>
     </thead>
     <tbody>
-      <tr><td><b>SMTP2Go</b> ⇢ <u><a href="https://www.smtp2go.com/" target="_blank">smtp2go.com \u{1F517}</a></u><br/>– Free tier: 1,000 emails/month, no domain required.<br/>– SMTP server: <code>mail.smtp2go.com</code>, port 465 or 587.</td></tr>
-      <tr><td><b>MailerSend</b> ⇢ <u><a href="https://www.mailersend.com/" target="_blank">mailersend.com \u{1F517}</a></u><br/>– Free tier: 500 emails/month, no domain required.<br/>– Use your <b>verified email</b> as "From" address.</td></tr>
-      <tr><td><b>Gmail</b> ⇢ <u><a href="https://mail.google.com/" target="_blank">mail.google.com \u{1F517}</a></u><br/>– Free tier: 500 emails/day, requires App Password (2FA must be ON).<br/>⚠️ Emails can <b>only be sent to @gmail.com addresses</b> unless you verify a custom "From" address.</td></tr>
-      <tr><td><b>Proton Mail</b> ⇢ <u><a href="https://mail.proton.me/" target="_blank">mail.proton.me \u{1F517}</a></u><br/>– Free tier: NONE, smtp access requires <b>paid plan</b>.<br/>– SMTP server: <code>smtp.proton.me</code>, port 465 or 587.</td></tr>
+      <tr><td><b>SMTP2Go</b> ⇢ <u><a href="https://www.smtp2go.com/" target="_blank">smtp2go.com 🔗</a></u><br/>– Free tier: 1,000 emails/month, no domain required.<br/>– SMTP server: <code>mail.smtp2go.com</code>, port 465 or 587.</td></tr>
+      <tr><td><b>MailerSend</b> ⇢ <u><a href="https://www.mailersend.com/" target="_blank">mailersend.com 🔗</a></u><br/>– Free tier: 500 emails/month, no domain required.<br/>– Use your <b>verified email</b> as "From" address.</td></tr>
+      <tr><td><b>Gmail</b> ⇢ <u><a href="https://mail.google.com/" target="_blank">mail.google.com 🔗</a></u><br/>– Free tier: 500 emails/day, requires App Password (2FA must be ON).<br/>⚠️ Emails can <b>only be sent to @gmail.com addresses</b> unless you verify a custom "From" address.</td></tr>
+      <tr><td><b>Proton Mail</b> ⇢ <u><a href="https://mail.proton.me/" target="_blank">mail.proton.me 🔗</a></u><br/>– Free tier: NONE, smtp access requires <b>paid plan</b>.<br/>– SMTP server: <code>smtp.proton.me</code>, port 465 or 587.</td></tr>
      </tbody>
   </table>
 </details>
@@ -132,12 +127,18 @@ export const addBackupTarget = sdk.Action.withInput(
       <tr><td>4️⃣</td><td><strong>Choose authentication</strong>:<br>
         – ✅ <strong>Password (recommended for beginners)</strong>:<br>
           &nbsp;&nbsp;• Leave <strong>“SFTP Private Key”</strong> blank<br>
-          &nbsp;&nbsp;• Enter your login password in <strong>“SFTP Password</strong><br>
+          &nbsp;&nbsp;• Enter your login password in <strong>“SFTP Password”</strong><br>
         – 🔑 <strong>SSH Key (advanced)</strong>:<br>
-          &nbsp;&nbsp;• <strong>Linux/macOS</strong>: Key is usually at <code>~/.ssh/id_rsa</code> or <code>~/.ssh/id_ed25519</code><br>
-          &nbsp;&nbsp;• <strong>Windows</strong>: Run in PowerShell:<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;<code>Get-Content "$env:USERPROFILE\.ssh\id_rsa"</code><br>
-          &nbsp;&nbsp;• Paste the **entire private key** (starts with <code>-----BEGIN OPENSSH PRIVATE KEY-----</code>) into <strong>“SFTP Private Key”</strong>
+          &nbsp;&nbsp;• <strong>How to generate a key (if you don’t have one):</strong><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;– <strong>Linux / macOS</strong>:<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>ssh-keygen -t ed25519 -C "lnd-backup" -f ~/.ssh/lnd_backup</code><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;– <strong>Windows (PowerShell)</strong>:<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>ssh-keygen -t ed25519 -C "lnd-backup" -f "$env:USERPROFILE\\.ssh\\lnd_backup"</code><br>
+          &nbsp;&nbsp;• Your private key is at:<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;– Linux/macOS: <code>~/.ssh/lnd_backup</code><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;– Windows: <code>%USERPROFILE%\\.ssh\\lnd_backup</code><br>
+          &nbsp;&nbsp;• <strong>Paste the entire private key</strong> (starts with <code>-----BEGIN OPENSSH PRIVATE KEY-----</code> and ends with <code>-----END ...</code>) into <strong>“SFTP Private Key”</strong><br>
+          ⚠️ <strong>Include every line</strong> and <strong>do not add extra spaces or line breaks at the end</strong>.
       </td></tr>
       <tr><td>5️⃣</td><td><strong>In LND SFTP Settings</strong>:<br>
         <strong>SFTP Host</strong>: IP from Step 3 (e.g., <code>192.168.1.20</code>)<br>
@@ -149,465 +150,628 @@ export const addBackupTarget = sdk.Action.withInput(
       <tr><td>6️⃣</td><td>Click <strong>Submit</strong>, then test with <strong>“Test Channels Auto-Backup”</strong>.</td></tr>
     </tbody>
   </table>
-  💡 <strong>Tip</strong>: If backup fails, check: IP correctness, SSH running, firewall blocking port 22, folder permissions, or special characters in password.
+  💡 <strong>Tip</strong>: If backup fails, check: IP correctness, SSH running, firewall blocking port 22, folder permissions, or special characters in password.<br>
+  💡 If your private key is **not fully saved**, try copying it again **without trailing newlines**—only the full key block.
 </details>
 <hr>
 <details>
-  <summary><b>Google Drive</b></summary>
-  <div></div>
+  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>Nextcloud</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="s" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
+  <table class="g-table tui-space_top-4">
+    <thead><tr><th>Step</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>1️⃣</td><td><strong>Log in</strong> to your Nextcloud instance.</td></tr>
+      <tr><td>2️⃣</td><td>Go to <strong>Settings → Security → Devices & sessions</strong>.</td></tr>
+      <tr><td>3️⃣</td><td>Under “App passwords”, <strong>create a new app password</strong> (e.g., “LND Backup”).</td></tr>
+      <tr><td>4️⃣</td><td>Copy the generated password — you won’t see it again!</td></tr>
+      <tr><td>5️⃣</td><td>In LND Auto-Backup config, fill in:<br>
+        <strong>Nextcloud WebDAV URL:</strong> <code>https://your-nextcloud.com/remote.php/dav/files/yourusername/</code><br>
+        <strong>Username:</strong> Your Nextcloud login<br>
+        <strong>Password:</strong> The app password from Step 3<br>
+        <strong>Folder Path:</strong> <code>lnd-backups</code> (will be created automatically)</td></tr>
+      <tr><td>6️⃣</td><td>Click <strong>Submit</strong> → Run <strong>Test Channels Auto-Backup</strong>.</td></tr>
+    </tbody>
+  </table>
+  💡 Ensure your Nextcloud server allows WebDAV access and isn’t behind aggressive firewalls.
 </details>
 <hr>
 <details>
-  <summary><b>Dropbox</b></summary>
-  <div></div>
+  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>Dropbox</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="s" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
+  <div class="tui-space_top-4">You’ll need to generate a Dropbox token using <code>rclone</code> on another machine.</div>
+  <table class="g-table tui-space_top-4">
+    <thead><tr><th>Step</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>1️⃣</td><td>Install <code>rclone</code> on Linux/macOS/Windows (see <a href="https://rclone.org/install/" target="_blank">rclone.org/install</a>)</td></tr>
+      <tr><td>2️⃣</td><td>Run in terminal:<br><code>rclone config create mydropbox dropbox</code></td></tr>
+      <tr><td>3️⃣</td><td>A browser will open — <strong>log in to Dropbox</strong> and grant access.</td></tr>
+      <tr><td>4️⃣</td><td>After success, run:<br><code>cat ~/.config/rclone/rclone.conf</code> (Linux/macOS)<br>or check <code>%USERPROFILE%\\.config\\rclone\\rclone.conf</code> (Windows)</td></tr>
+      <tr><td>5️⃣</td><td>Find the <code>[mydropbox]</code> section and copy the entire <code>token = { ... }</code> JSON line.</td></tr>
+      <tr><td>6️⃣</td><td>In LND Auto-Backup, paste this JSON into <strong>“Dropbox Token (JSON)”</strong>.</td></tr>
+      <tr><td>7️⃣</td><td>Click <strong>Submit</strong> → Run <strong>Test Backup</strong>.</td></tr>
+    </tbody>
+  </table>
+  ⚠️ The token is long and contains sensitive OAuth data — keep it secure.
 </details>
 <hr>
 <details>
-  <summary><b>Nextcloud</b></summary>
-  <div></div>
+  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>Google Drive</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="s" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
+  <div class="tui-space_top-4">Google Drive requires a <strong>Service Account</strong> with access to a shared folder.</div>
+  <table class="g-table tui-space_top-4">
+    <thead><tr><th>Step</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>1️⃣</td><td>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> → Create a project (e.g., “lnd-backup”).</td></tr>
+      <tr><td>2️⃣</td><td>Enable the <strong>Google Drive API</strong> for the project.</td></tr>
+      <tr><td>3️⃣</td><td>Go to <strong>IAM & Admin → Service Accounts</strong> → <strong>Create Service Account</strong>.</td></tr>
+      <tr><td>4️⃣</td><td>Name it (e.g., “lnd-backup”) → Click “Create and Continue” → Skip roles.</td></tr>
+      <tr><td>5️⃣</td><td>On the service account page, go to <strong>Keys → Add Key → Create new key → JSON</strong>.</td></tr>
+      <tr><td>6️⃣</td><td>Download the JSON file — this is your <strong>Service Account Key</strong>.</td></tr>
+      <tr><td>7️⃣</td><td>In Google Drive, <strong>create a new folder</strong> (e.g., “lnd-backups”).</td></tr>
+      <tr><td>8️⃣</td><td><strong>Share the folder</strong> with the service account email (found in the JSON: <code>client_email</code>), giving it <strong>Editor</strong> access.</td></tr>
+      <tr><td>9️⃣</td><td>In LND Auto-Backup:<br>
+        • Paste the <strong>entire JSON file contents</strong> into <strong>“Google Service Account Key”</strong><br>
+        • Enter folder name, e.g., <code>lnd-backups</code><br>
+        • For personal accounts, optionally paste the <strong>Folder ID</strong> from the URL.</td></tr>
+      <tr><td>🔟</td><td>Click <strong>Submit</strong> → Run <strong>Test Backup</strong>.</td></tr>
+    </tbody>
+  </table>
+  💡 For Workspace (G Suite) admins: you can use a <strong>Shared Drive ID</strong> instead.
 </details>
   </details>`,
-allowedStatuses: 'only-running',
-group: 'Backup',
-visibility: 'enabled',
+  allowedStatuses: 'only-running',
+  group: 'Backup',
+  visibility: 'enabled',
+}),
+sdk.InputSpec.of({
+  providers: sdk.Value.multiselect({
+    name: 'Enabled Backup Providers 🞃',
+    default: [],
+    values: {
+      'gdrive': 'Google Drive',
+      'dropbox': 'Dropbox',
+      'nextcloud': 'Nextcloud',
+      'sftp': 'SFTP',
+      'email': 'Email',
+    },
   }),
-sdk.InputSpec.of({
-providers: sdk.Value.multiselect({
-name: 'Enabled Backup Providers 🞃',
-default: [],
-values: {
-'gdrive': 'Google Drive',
-'dropbox': 'Dropbox',
-'nextcloud': 'Nextcloud',
-'sftp': 'SFTP',
-'email': 'Email',
-      },
+  google: sdk.Value.object(
+    {
+      name: 'Google Drive Settings',
+      description: 'Configure settings for Google Drive backup.',
+    },
+    sdk.InputSpec.of({
+      'gdrive-key': sdk.Value.text({
+        name: 'Google Service Account Key (JSON)',
+        description: 'For Google Drive: Paste the contents of your Google Service Account JSON key file.',
+        default: '',
+        masked: true,
+        required: false,
+      }),
+      'gdrive-path': sdk.Value.text({
+        name: 'Google Drive Folder Path',
+        description: 'For Google Drive: Example: lnd-backups',
+        default: 'lnd-backups',
+        required: false,
+      }),
+      'gdrive-team-drive': sdk.Value.text({
+        name: 'Google Shared Drive ID',
+        description: 'For Google Drive (Workspace accounts): ID of the shared drive. Optional for personal accounts.',
+        default: '',
+        required: false,
+      }),
+      'gdrive-folder-id': sdk.Value.text({
+        name: 'Google Folder ID (for personal accounts)',
+        description: 'For free Google accounts: ID of the shared folder (from URL: drive.google.com/drive/folders/<ID>). Required if no Shared Drive ID.',
+        default: '',
+        required: false,
+      }),
     }),
-google: sdk.Value.object(
-      {
-name: 'Google Drive Settings',
-description: 'Configure settings for Google Drive backup.',
-      },
-sdk.InputSpec.of({
-'gdrive-key': sdk.Value.text({
-name: 'Google Service Account Key (JSON)',
-description: 'For Google Drive: Paste the contents of your Google Service Account JSON key file.',
-default: '',
-masked: true,
-required: false,
-        }),
-'gdrive-path': sdk.Value.text({
-name: 'Google Drive Folder Path',
-description: 'For Google Drive: Example: lnd-backups',
-default: 'lnd-backups',
-required: false,
-        }),
-'gdrive-team-drive': sdk.Value.text({
-name: 'Google Shared Drive ID',
-description: 'For Google Drive (Workspace accounts): ID of the shared drive. Optional for personal accounts.',
-default: '',
-required: false,
-        }),
-'gdrive-folder-id': sdk.Value.text({
-name: 'Google Folder ID (for personal accounts)',
-description: 'For free Google accounts: ID of the shared folder (from URL: drive.google.com/drive/folders/<ID>). Required if no Shared Drive ID.',
-default: '',
-required: false,
+  ),
+  dropbox: sdk.Value.object(
+    {
+      name: 'Dropbox Settings',
+      description: 'Configure settings for Dropbox backup.',
+    },
+    sdk.InputSpec.of({
+      'dropbox-token': sdk.Value.text({
+        name: 'Dropbox Token (JSON)',
+        description: 'For Dropbox: Run `rclone config create mydropbox dropbox` on your local machine, complete OAuth in browser, then copy the "token = {...}" JSON from ~/.rclone.conf and paste here.',
+        default: '',
+        masked: true,
+        required: false,
+      }),
+      'dropbox-path': sdk.Value.text({
+        name: 'Dropbox Folder Path',
+        description: 'For Dropbox: Example: lnd-backups',
+        default: 'lnd-backups',
+        required: false,
+      }),
+    }),
+  ),
+  nextcloud: sdk.Value.object(
+    {
+      name: 'Nextcloud Settings',
+      description: 'Configure settings for Nextcloud backup.',
+    },
+    sdk.InputSpec.of({
+      'nextcloud-url': sdk.Value.text({
+        name: 'Nextcloud WebDAV URL',
+        description: 'For Nextcloud: Base URL, e.g., https://your.nextcloud.com/remote.php/dav/files/yourusername/',
+        default: '',
+        required: false,
+      }),
+      'nextcloud-user': sdk.Value.text({
+        name: 'Nextcloud Username',
+        description: 'For Nextcloud: Your login username.',
+        default: '',
+        required: false,
+      }),
+      'nextcloud-pass': sdk.Value.text({
+        name: 'Nextcloud Password',
+        description: 'For Nextcloud: App password or login password (stored in plain text internally).',
+        default: '',
+        masked: true,
+        required: false,
+      }),
+      'nextcloud-path': sdk.Value.text({
+        name: 'Nextcloud Folder Path',
+        description: 'For Nextcloud: Example: lnd-backups',
+        default: 'lnd-backups',
+        required: false,
+      }),
+    }),
+  ),
+  sftp: sdk.Value.object(
+    {
+      name: 'SFTP Settings',
+      description: 'Configure SFTP backup with password or SSH key.',
+    },
+    sdk.InputSpec.of({
+      auth: sdk.Value.union({
+        name: 'Authentication Type',
+        description: 'Choose password or SSH key.',
+        default: 'password',
+        variants: sdk.Variants.of({
+          password: {
+            name: 'Password',
+            spec: sdk.InputSpec.of({
+              'sftp-host': sdk.Value.text({
+                name: 'SFTP Host',
+                description: 'Hostname or IP of the SFTP server.',
+                default: '',
+                required: false,
+                patterns: [
+                  { regex: '^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)+([A-Za-z0-9]|[A-Za-z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])|(\\d{1,3}\\.){3}\\d{1,3})$', description: 'Must be a valid domain or IP address.' }
+                ]
+              }),
+              'sftp-user': sdk.Value.text({
+                name: 'SFTP Username',
+                description: 'Login username.',
+                default: '',
+                required: false,
+                patterns: [
+                  { regex: '^[a-zA-Z0-9_-]+$', description: 'Can contain letters, numbers, underscores, and hyphens.' }
+                ]
+              }),
+              'sftp-pass': sdk.Value.text({
+                name: 'SFTP Password',
+                description: 'Password (stored obscured internally).',
+                default: '',
+                masked: true,
+                required: false,
+              }),
+              'sftp-port': sdk.Value.text({
+                name: 'SFTP Port',
+                description: 'Default 22.',
+                default: '22',
+                required: false,
+                patterns: [
+                  { regex: '^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$', description: 'Must be between 1 and 65535.' }
+                ]
+              }),
+              'sftp-path': sdk.Value.text({
+                name: 'SFTP Folder Path',
+                description: 'Example: /path/to/lnd-backups',
+                default: 'lnd-backups',
+                required: false,
+                patterns: [
+                  { regex: '^/?([a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]*$', description: 'Optional leading /, valid characters (alphanum, _, -).' }
+                ]
+              }),
+            }),
+          },
+          key: {
+            name: 'SSH Key',
+            spec: sdk.InputSpec.of({
+              'sftp-host': sdk.Value.text({
+                name: 'SFTP Host',
+                description: 'Hostname or IP of the SFTP server.',
+                default: '',
+                required: false,
+                patterns: [
+                  { regex: '^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)+([A-Za-z0-9]|[A-Za-z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])|(\\d{1,3}\\.){3}\\d{1,3})$', description: 'Must be a valid domain or IP address.' }
+                ]
+              }),
+              'sftp-user': sdk.Value.text({
+                name: 'SFTP Username',
+                description: 'Login username.',
+                default: '',
+                required: false,
+                patterns: [
+                  { regex: '^[a-zA-Z0-9_-]+$', description: 'Can contain letters, numbers, underscores, and hyphens.' }
+                ]
+              }),
+              'sftp-key': sdk.Value.text({
+                name: 'SFTP Private Key',
+                description: 'Paste your full SSH private key (starts with -----BEGIN OPENSSH PRIVATE KEY-----).',
+                default: '',
+                required: false,
+                masked: false,
+                patterns: [
+                  { regex: '^-----BEGIN OPENSSH PRIVATE KEY-----.*-----END OPENSSH PRIVATE KEY-----$', description: 'Must be a valid OpenSSH private key PEM format.' }
+                ]
+              }),
+              'sftp-port': sdk.Value.text({
+                name: 'SFTP Port',
+                description: 'Default 22.',
+                default: '22',
+                required: false,
+                patterns: [
+                  { regex: '^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$', description: 'Must be between 1 and 65535.' }
+                ]
+              }),
+              'sftp-path': sdk.Value.text({
+                name: 'SFTP Folder Path',
+                description: 'Example: /path/to/lnd-backups',
+                default: 'lnd-backups',
+                required: false,
+                patterns: [
+                  { regex: '^/?([a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]*$', description: 'Optional leading /, valid characters (alphanum, _, -).' }
+                ]
+              }),
+            }),
+          },
         }),
       }),
-    ),
-dropbox: sdk.Value.object(
-      {
-name: 'Dropbox Settings',
-description: 'Configure settings for Dropbox backup.',
-      },
-sdk.InputSpec.of({
-'dropbox-token': sdk.Value.text({
-name: 'Dropbox Token (JSON)',
-description: 'For Dropbox: Run `rclone config create mydropbox dropbox` on your local machine, complete OAuth in browser, then copy the "token = {...}" JSON from ~/.rclone.conf and paste here.',
-default: '',
-masked: true,
-required: false,
-        }),
-'dropbox-path': sdk.Value.text({
-name: 'Dropbox Folder Path',
-description: 'For Dropbox: Example: lnd-backups',
-default: 'lnd-backups',
-required: false,
-        }),
-      }),
-    ),
-nextcloud: sdk.Value.object(
-      {
-name: 'Nextcloud Settings',
-description: 'Configure settings for Nextcloud backup.',
-      },
-sdk.InputSpec.of({
-'nextcloud-url': sdk.Value.text({
-name: 'Nextcloud WebDAV URL',
-description: 'For Nextcloud: Base URL, e.g., https://your.nextcloud.com/remote.php/dav/files/yourusername/',
-default: '',
-required: false,
-        }),
-'nextcloud-user': sdk.Value.text({
-name: 'Nextcloud Username',
-description: 'For Nextcloud: Your login username.',
-default: '',
-required: false,
-        }),
-'nextcloud-pass': sdk.Value.text({
-name: 'Nextcloud Password',
-description: 'For Nextcloud: App password or login password (stored in plain text internally).',
-default: '',
-masked: true,
-required: false,
-        }),
-'nextcloud-path': sdk.Value.text({
-name: 'Nextcloud Folder Path',
-description: 'For Nextcloud: Example: lnd-backups',
-default: 'lnd-backups',
-required: false,
-        }),
-      }),
-    ),
-sftp: sdk.Value.object(
-      {
-name: 'SFTP Settings',
-description: 'Configure settings for SFTP backup.',
-      },
-sdk.InputSpec.of({
-'sftp-host': sdk.Value.text({
-name: 'SFTP Host',
-description: 'For SFTP: Hostname or IP of the SFTP server.',
-default: '',
-required: false,
-        }),
-'sftp-user': sdk.Value.text({
-name: 'SFTP Username',
-description: 'For SFTP: Login username.',
-default: '',
-required: false,
-        }),
-'sftp-key': sdk.Value.text({
-name: 'SFTP Private Key (optional)',
-description: 'Paste your SSH private key (e.g., contents of ~/.ssh/id_rsa) for passwordless auth. If provided, password is ignored. Multiline OK.',
-default: '',
-masked: true,
-required: false,
-        }),
-'sftp-pass': sdk.Value.text({
-name: 'SFTP Password',
-description: 'For SFTP: Password (stored in plain text internally; use key auth if possible).',
-default: '',
-masked: true,
-required: false,
-        }),
-'sftp-port': sdk.Value.text({
-name: 'SFTP Port',
-description: 'For SFTP: Default 22.',
-default: '22',
-required: false,
-        }),
-'sftp-path': sdk.Value.text({
-name: 'SFTP Folder Path',
-description: 'For SFTP: Example: /path/to/lnd-backups',
-default: 'lnd-backups',
-required: false,
-        }),
-      }),
-    ),
-email: sdk.Value.object(
-      {
-name: 'Email Settings',
-description: `<div>Here you can configure settings for Email backup. Your <code>channel.backup</code> file will be <strong>automatically attached and emailed</strong> every time it changes — that means whenever you <strong>open a new channel</strong>,
+    }),
+  ),
+  email: sdk.Value.object(
+    {
+      name: 'Email Settings',
+      description: `<div>Here you can configure settings for Email backup. Your <code>channel.backup</code> file will be <strong>automatically attached and emailed</strong> every time it changes — that means whenever you <strong>open a new channel</strong>,
   <strong>close a channel</strong>, or Lightning updates the backup for any other reason.</div>
-<div><strong>You’ll receive an email within seconds</strong> of every channel state change.</div>`
-      },
-sdk.InputSpec.of({
-'email-from': sdk.Value.text({
-name: 'Email Sender Address',
-description: 'For Email: Sender email (e.g., yourusername@gmail.com).',
-default: '',
-required: false,
-        }),
-'email-to': sdk.Value.text({
-name: 'Email Recipient Address',
-description: `Recipient email can be the same as sender, but try to add at least 2 email recipients addresses and try to mix email providers. Example: <code>youremail@protonmail.com, youremail@gmail.com, youremail@tutanota.com, famillymemberemail@gmail.com, friendemail@gmail.com</code></div>`,
-default: '',
-required: false,
-        }),
-'email-smtp-server': sdk.Value.text({
-name: 'Email SMTP Server',
-description: `<table><thead><tr><th>✅ Recommended SMTP Providers</th></tr></thead>
+<div><strong>You’ll receive an email within seconds</strong> of every channel state change.</div>`,
+    },
+    sdk.InputSpec.of({
+      'email-from': sdk.Value.text({
+        name: 'Email Sender Address',
+        description: 'For Email: Sender email (e.g., yourusername@gmail.com).',
+        default: '',
+        required: false,
+      }),
+      'email-to': sdk.Value.text({
+        name: 'Email Recipient Address',
+        description: `Recipient email can be the same as sender, but try to add at least 2 email recipients addresses and try to mix email providers. Example: <code>youremail@protonmail.com, youremail@gmail.com, youremail@tutanota.com, famillymemberemail@gmail.com, friendemail@gmail.com</code></div>`,
+        default: '',
+        required: false,
+      }),
+      'email-smtp-server': sdk.Value.text({
+        name: 'Email SMTP Server',
+        description: `<table><thead><tr><th>✅ Recommended SMTP Providers</th></tr></thead>
                         <tbody>
-                        <tr><td><b>MailerSend</b> ⇢ <a href="https://www.mailersend.com/" target="_blank">mailersend.com \u{1F517}</a><br/>– Free tier: 3,000 emails/month, no domain required.<br/>– Use your <b>verified email</b> as "From" address.</td></tr>
-                        <tr><td><b>SMTP2Go</b> ⇢ <a href="https://www.smtp2go.com/" target="_blank">smtp2go.com \u{1F517}</a><br/>– Free tier: 1,000 emails/month, no domain required.<br/>– SMTP server: <code>mail.smtp2go.com</code>, port 465 or 587.</td></tr>
-                        <tr><td><b>Gmail</b> ⇢ <a href="https://mail.google.com/" target="_blank">mail.google.com \u{1F517}</a><br/>– Free tier: 500 emails/day, requires App Password (2FA must be ON).<br/>⚠️ Emails can <b>only be sent to @gmail.com addresses</b> unless you verify a custom "From" address.</td></tr>
-                        <tr><td><b>Proton Mail</b> ⇢ <a href="https://mail.proton.me/" target="_blank">mail.proton.me \u{1F517}</a><br/>– Free tier: NONE, smtp access requires <b>paid plan</b>.<br/>– SMTP server: <code>smtp.proton.me</code>, port 465 or 587.</td></tr>
+                        <tr><td><b>MailerSend</b> ⇢ <a href="https://www.mailersend.com/" target="_blank">mailersend.com 🔗</a><br/>– Free tier: 3,000 emails/month, no domain required.<br/>– Use your <b>verified email</b> as "From" address.</td></tr>
+                        <tr><td><b>SMTP2Go</b> ⇢ <a href="https://www.smtp2go.com/" target="_blank">smtp2go.com 🔗</a><br/>– Free tier: 1,000 emails/month, no domain required.<br/>– SMTP server: <code>mail.smtp2go.com</code>, port 465 or 587.</td></tr>
+                        <tr><td><b>Gmail</b> ⇢ <a href="https://mail.google.com/" target="_blank">mail.google.com 🔗</a><br/>– Free tier: 500 emails/day, requires App Password (2FA must be ON).<br/>⚠️ Emails can <b>only be sent to @gmail.com addresses</b> unless you verify a custom "From" address.</td></tr>
+                        <tr><td><b>Proton Mail</b> ⇢ <a href="https://mail.proton.me/" target="_blank">mail.proton.me 🔗</a><br/>– Free tier: NONE, smtp access requires <b>paid plan</b>.<br/>– SMTP server: <code>smtp.proton.me</code>, port 465 or 587.</td></tr>
                         </tbody>
                         </table>`,
-default: 'mail.smtp2go.com',
-required: false,
-        }),
-'email-smtp-port': sdk.Value.text({
-name: 'Email SMTP Port',
-description: 'For Email: 465 for SSL, 587 for TLS.',
-default: '465',
-required: false,
-        }),
-'email-smtp-user': sdk.Value.text({
-name: 'Email SMTP Username',
-description: 'For Email: Usually the sender email.',
-default: '',
-required: false,
-        }),
-'email-smtp-pass': sdk.Value.text({
-name: 'Email SMTP Password',
-description: 'For Email: App password if using Gmail (enable 2FA and create at myaccount.google.com/apppasswords). Stored in plain text internally.',
-default: '',
-masked: true,
-required: false,
-        }),
+        default: 'mail.smtp2go.com',
+        required: false,
       }),
-    ),
-  }),
+      'email-smtp-port': sdk.Value.text({
+        name: 'Email SMTP Port',
+        description: 'For Email: 465 for SSL, 587 for TLS.',
+        default: '465',
+        required: false,
+      }),
+      'email-smtp-user': sdk.Value.text({
+        name: 'Email SMTP Username',
+        description: 'For Email: Usually the sender email.',
+        default: '',
+        required: false,
+      }),
+      'email-smtp-pass': sdk.Value.text({
+        name: 'Email SMTP Password',
+        description: 'For Email: App password if using Gmail (enable 2FA and create at myaccount.google.com/apppasswords). Stored in plain text internally.',
+        default: '',
+        masked: true,
+        required: false,
+      }),
+    }),
+  ),
+}),
 async ({ effects }) => {
-const config = (await customConfigJson.read().once().catch(() => ({}))) as any
-const existingConf = config.rcloneConfig ? Buffer.from(config.rcloneConfig, 'base64').toString('utf8') : ''
-const sections = parseRcloneConf(existingConf)
-const getPath = (provider: string) => config.selectedRcloneRemotes?.find((r: string) => r.startsWith(provider + ':'))?.split(':')[1] || 'lnd-backups'
-// ✅ FIX: Use selectedRcloneRemotes, not !!sections[p]
-const selectedProviders = VALID_PROVIDERS.filter(p => {
-if (p === 'email') return !!config.emailBackup
-return config.selectedRcloneRemotes?.some((r: string) => r.startsWith(p + ':'))
-    }) as typeof VALID_PROVIDERS[number][]
-return {
-providers: selectedProviders,
-google: {
-'gdrive-key': '',
-'gdrive-path': getPath('gdrive'),
-'gdrive-team-drive': sections['gdrive']?.team_drive || '',
-'gdrive-folder-id': sections['gdrive']?.root_folder_id || '',
-      },
-dropbox: {
-'dropbox-token': '',
-'dropbox-path': getPath('dropbox'),
-      },
-nextcloud: {
-'nextcloud-url': sections['nextcloud']?.url || '',
-'nextcloud-user': sections['nextcloud']?.user || '',
-'nextcloud-pass': '',
-'nextcloud-path': getPath('nextcloud'),
-      },
-sftp: {
-'sftp-host': sections['sftp']?.host || '',
-'sftp-user': sections['sftp']?.user || '',
-'sftp-pass': '',
-'sftp-port': sections['sftp']?.port || '22',
-'sftp-path': getPath('sftp'),
-      },
-email: {
-'email-from': config.emailBackup?.from || '',
-'email-to': config.emailBackup?.to || '',
-'email-smtp-server': config.emailBackup?.smtp_server || 'smtp.gmail.com',
-'email-smtp-port': config.emailBackup?.smtp_port?.toString() || '465',
-'email-smtp-user': config.emailBackup?.smtp_user || '',
-'email-smtp-pass': '',
-      },
-    }
-  },
+  const config = (await customConfigJson.read().once().catch(() => ({}))) as any
+  const existingConf = config.rcloneConfig ? Buffer.from(config.rcloneConfig, 'base64').toString('utf8') : ''
+  const sections = parseRcloneConf(existingConf)
+  const getPath = (provider: string) => config.selectedRcloneRemotes?.find((r: string) => r.startsWith(provider + ':'))?.split(':')[1] || 'lnd-backups'
+  const selectedProviders = VALID_PROVIDERS.filter(p => {
+    if (p === 'email') return !!config.emailBackup
+    return config.selectedRcloneRemotes?.some((r: string) => r.startsWith(p + ':'))
+  }) as typeof VALID_PROVIDERS[number][]
+  return {
+    providers: selectedProviders,
+    google: {
+      'gdrive-key': '',
+      'gdrive-path': getPath('gdrive'),
+      'gdrive-team-drive': sections['gdrive']?.team_drive || '',
+      'gdrive-folder-id': sections['gdrive']?.root_folder_id || '',
+    },
+    dropbox: {
+      'dropbox-token': '',
+      'dropbox-path': getPath('dropbox'),
+    },
+    nextcloud: {
+      'nextcloud-url': sections['nextcloud']?.url || '',
+      'nextcloud-user': sections['nextcloud']?.user || '',
+      'nextcloud-pass': '',
+      'nextcloud-path': getPath('nextcloud'),
+    },
+    sftp: (() => {
+  const sftpSection = sections['sftp'] || {}
+  let selection: 'password' | 'key' = 'password'
+  let value: any = {
+    'sftp-host': sftpSection.host || '',
+    'sftp-user': sftpSection.user || '',
+    'sftp-port': sftpSection.port || '22',
+    'sftp-path': getPath('sftp'),
+  }
+  if (sftpSection.key_pem) {
+    selection = 'key'
+    value['sftp-key'] = '' // Masked, don't prefill
+  } else if (sftpSection.pass) {
+    selection = 'password'
+    value['sftp-pass'] = '' // Masked, don't prefill
+  }
+  // ✅ Return as { auth: { selection, value } } to match InputSpec
+  return { auth: { selection, value } }
+})(),
+    email: {
+      'email-from': config.emailBackup?.from || '',
+      'email-to': config.emailBackup?.to || '',
+      'email-smtp-server': config.emailBackup?.smtp_server || 'smtp.gmail.com',
+      'email-smtp-port': config.emailBackup?.smtp_port?.toString() || '465',
+      'email-smtp-user': config.emailBackup?.smtp_user || '',
+      'email-smtp-pass': '',
+    },
+  }
+},
 async ({ effects, input }) => {
-try {
-const rawProviders = input.providers || []
-const providers = rawProviders.filter(p => VALID_PROVIDERS.includes(p as any)) as typeof VALID_PROVIDERS[number][]
-const config = (await customConfigJson.read().once().catch(() => ({}))) as any
-if (providers.length === 0) {
-await customConfigJson.merge(effects, {
-channelAutoBackupEnabled: false,
-selectedRcloneRemotes: [],
-enabledRemotes: [],
-emailBackup: null,
-emailEnabled: false,
-rcloneConfig: null,
-        })
-return {
-version: '1',
-title: '⚠️ Channels - Auto-Backup: Disabled',
-message: `Channel auto-backup has been disabled. Please use built StartOS backup or download <code>channel.backup</code> manually (e.g. via RTL or ThunderHub) whenever you open/close channels.`,
-result: null,
-        }
+  try {
+    const rawProviders = input.providers || []
+    const providers = rawProviders.filter(p => VALID_PROVIDERS.includes(p as any)) as typeof VALID_PROVIDERS[number][]
+    const config = (await customConfigJson.read().once().catch(() => ({}))) as any
+    if (providers.length === 0) {
+      await customConfigJson.merge(effects, {
+        channelAutoBackupEnabled: false,
+        selectedRcloneRemotes: [],
+        enabledRemotes: [],
+        emailBackup: null,
+        emailEnabled: false,
+        rcloneConfig: null,
+      })
+      return {
+        version: '1',
+        title: '⚠️ Channels - Auto-Backup: Disabled',
+        message: `Channel auto-backup has been disabled. Please use built StartOS backup or download <code>channel.backup</code> manually (e.g. via RTL or ThunderHub) whenever you open/close channels.`,
+        result: null,
       }
-let updates: any = { channelAutoBackupEnabled: true }
-let existingConf = config.rcloneConfig ? Buffer.from(config.rcloneConfig, 'base64').toString('utf8') : ''
-let sections = parseRcloneConf(existingConf)
-let newSections = ''
-let newRemotes: string[] = []
-let newEnabled: string[] = []
-const previousCloudProviders = VALID_PROVIDERS.filter(p => p !== 'email' && !!sections[p]) as Exclude<typeof VALID_PROVIDERS[number], 'email'>[]
-let filteredSelected = config.selectedRcloneRemotes || []
-let filteredEnabled = config.enabledRemotes || []
-for (const prevProvider of previousCloudProviders) {
-if (!providers.includes(prevProvider)) {
-existingConf = removeSection(existingConf, prevProvider)
-filteredSelected = filteredSelected.filter((r: unknown) => typeof r === 'string' && !r.startsWith(prevProvider + ':'))
-filteredEnabled = filteredEnabled.filter((r: unknown) => typeof r === 'string' && !r.startsWith(prevProvider + ':'))
-delete sections[prevProvider]
-        }
+    }
+    let updates: any = { channelAutoBackupEnabled: true }
+    let existingConf = config.rcloneConfig ? Buffer.from(config.rcloneConfig, 'base64').toString('utf8') : ''
+    let sections = parseRcloneConf(existingConf)
+    let newSections = ''
+    let newRemotes: string[] = []
+    let newEnabled: string[] = []
+    const previousCloudProviders = VALID_PROVIDERS.filter(p => p !== 'email' && !!sections[p]) as Exclude<typeof VALID_PROVIDERS[number], 'email'>[]
+    let filteredSelected = config.selectedRcloneRemotes || []
+    let filteredEnabled = config.enabledRemotes || []
+    for (const prevProvider of previousCloudProviders) {
+      if (!providers.includes(prevProvider)) {
+        existingConf = removeSection(existingConf, prevProvider)
+        filteredSelected = filteredSelected.filter((r: unknown) => typeof r === 'string' && !r.startsWith(prevProvider + ':'))
+        filteredEnabled = filteredEnabled.filter((r: unknown) => typeof r === 'string' && !r.startsWith(prevProvider + ':'))
+        delete sections[prevProvider]
       }
-updates.selectedRcloneRemotes = filteredSelected
-updates.enabledRemotes = filteredEnabled
-if (!providers.includes('email') && config.emailBackup) {
-updates.emailBackup = null
-updates.emailEnabled = false
-      }
-providers.forEach((provider: typeof VALID_PROVIDERS[number]) => {
-if (provider !== 'email') {
-const remoteName = provider
-const existingSection = sections[remoteName] || {}
-let path: string
-let newSectionLines: string[] = [`[${remoteName}]`]
-switch (provider) {
-case 'gdrive': {
-path = input.google['gdrive-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
-const keyInput = input.google['gdrive-key']?.trim()
-const key = keyInput || existingSection.service_account_credentials || ''
-if (!key.trim()) throw new Error('Google Service Account Key is required.')
-let keyObj
-try {
-keyObj = JSON.parse(key)
-              } catch {
-throw new Error('Invalid JSON in Service Account Key.')
-              }
-const teamDrive = input.google['gdrive-team-drive']?.trim() || existingSection.team_drive || ''
-const folderId = input.google['gdrive-folder-id']?.trim() || existingSection.root_folder_id || ''
-if (teamDrive && folderId) throw new Error('Specify either Shared Drive ID or Folder ID, not both.')
-if (!teamDrive && !folderId) throw new Error('Shared Drive ID or Folder ID required for Google Drive.')
-newSectionLines.push('type = drive')
-newSectionLines.push('scope = drive')
-newSectionLines.push(`service_account_credentials = ${JSON.stringify(keyObj)}`)
-if (teamDrive) newSectionLines.push(`team_drive = ${teamDrive}`)
-if (folderId && !teamDrive) newSectionLines.push(`root_folder_id = ${folderId}`)
-updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:'))
-updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:'))
-break
+    }
+    updates.selectedRcloneRemotes = filteredSelected
+    updates.enabledRemotes = filteredEnabled
+    if (!providers.includes('email') && config.emailBackup) {
+      updates.emailBackup = null
+      updates.emailEnabled = false
+    }
+    providers.forEach((provider: typeof VALID_PROVIDERS[number]) => {
+      if (provider !== 'email') {
+        const remoteName = provider
+        const existingSection = sections[remoteName] || {}
+        let path: string = ''
+        let newSectionLines: string[] = [`[${remoteName}]`]
+        switch (provider) {
+          case 'gdrive': {
+            path = input.google['gdrive-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
+            const keyInput = input.google['gdrive-key']?.trim()
+            const key = keyInput || existingSection.service_account_credentials || ''
+            if (!key.trim()) throw new Error('Google Service Account Key is required.')
+            let keyObj
+            try {
+              keyObj = JSON.parse(key)
+            } catch {
+              throw new Error('Invalid JSON in Service Account Key.')
             }
-case 'dropbox': {
-path = input.dropbox['dropbox-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
-const token = input.dropbox['dropbox-token']?.trim() || existingSection.token || ''
-if (!token.trim()) throw new Error('Dropbox Token JSON is required.')
-let tokenObj
-try {
-tokenObj = JSON.parse(token)
-              } catch {
-throw new Error('Invalid JSON in Dropbox Token.')
-              }
-newSectionLines.push('type = dropbox')
-newSectionLines.push(`token = ${JSON.stringify(tokenObj)}`)
-updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
-updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
-break
-            }
-case 'nextcloud': {
-path = input.nextcloud['nextcloud-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
-const url = input.nextcloud['nextcloud-url']?.trim() || existingSection.url || ''
-const user = input.nextcloud['nextcloud-user']?.trim() || existingSection.user || ''
-let passValue = existingSection.pass || ''
-const passInput = input.nextcloud['nextcloud-pass']?.trim()
-if (passInput) {
-passValue = obscure(passInput)
-              } else if (passValue && !isObscured(passValue)) {
-passValue = obscure(passValue)
-              }
-if (!url.trim() || !user.trim() || !passValue.trim()) throw new Error('Nextcloud URL, username, and password are required.')
-newSectionLines.push('type = webdav')
-newSectionLines.push(`url = ${url}`)
-newSectionLines.push('vendor = nextcloud')
-newSectionLines.push(`user = ${user}`)
-newSectionLines.push(`pass = ${passValue}`)
-updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
-updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
-break
-            }
-case 'sftp': {
-path = input.sftp['sftp-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
-const host = input.sftp['sftp-host']?.trim() || existingSection.host || ''
-const user = input.sftp['sftp-user']?.trim() || existingSection.user || ''
-let passValue = existingSection.pass || ''
-const passInput = input.sftp['sftp-pass']?.trim()
-const key = input.sftp['sftp-key']?.trim() || existingSection.key_pem || ''
-const port = input.sftp['sftp-port']?.trim() || existingSection.port || '22'
-if (passInput) {
-passValue = obscure(passInput)
-              } else if (passValue && !isObscured(passValue)) {
-passValue = obscure(passValue)
-              }
-const hasPassword = !!passValue.trim()
-const hasKey = !!key.trim()
-if (!host.trim() || !user.trim()) throw new Error('SFTP host and username are required.')
-if (!hasPassword && !hasKey) throw new Error('SFTP requires password or key.')
-newSectionLines.push('type = sftp')
-newSectionLines.push(`host = ${host}`)
-newSectionLines.push(`user = ${user}`)
-newSectionLines.push(`port = ${port}`)
-newSectionLines.push('key_use_agent = false')
-if (hasKey) newSectionLines.push(`key_pem = ${key.replace(/\n/g, '\\n')}`)
-if (hasPassword && !hasKey) newSectionLines.push(`pass = ${passValue}`)
-updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
-updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
-break
-            }
+            const teamDrive = input.google['gdrive-team-drive']?.trim() || existingSection.team_drive || ''
+            const folderId = input.google['gdrive-folder-id']?.trim() || existingSection.root_folder_id || ''
+            if (teamDrive && folderId) throw new Error('Specify either Shared Drive ID or Folder ID, not both.')
+            if (!teamDrive && !folderId) throw new Error('Shared Drive ID or Folder ID required for Google Drive.')
+            newSectionLines.push('type = drive')
+            newSectionLines.push('scope = drive')
+            newSectionLines.push(`service_account_credentials = ${JSON.stringify(keyObj)}`)
+            if (teamDrive) newSectionLines.push(`team_drive = ${teamDrive}`)
+            if (folderId && !teamDrive) newSectionLines.push(`root_folder_id = ${folderId}`)
+            updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:'))
+            updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:'))
+            break
           }
-newSections += newSectionLines.join('\n') + '\n'
-existingConf = removeSection(existingConf, remoteName)
-const remotePath = `${remoteName}:${path}`
-newRemotes.push(remotePath)
-newEnabled.push(remotePath)
-        } else {
-const from = input.email['email-from']?.trim() || config.emailBackup?.from || ''
-const to = input.email['email-to']?.trim() || config.emailBackup?.to || ''
-const server = input.email['email-smtp-server']?.trim() || config.emailBackup?.smtp_server || 'smtp.gmail.com'
-const port = input.email['email-smtp-port']?.trim() || config.emailBackup?.smtp_port?.toString() || '465'
-const user = input.email['email-smtp-user']?.trim() || config.emailBackup?.smtp_user || ''
-const pass = input.email['email-smtp-pass']?.trim() || config.emailBackup?.smtp_pass || ''
-if (!from.trim() || !to.trim() || !user.trim() || !pass.trim()) throw new Error('Email from, to, SMTP user, and password are required.')
-updates.emailBackup = { from, to, smtp_server: server, smtp_port: parseInt(port), smtp_user: user, smtp_pass: pass }
-updates.emailEnabled = true
+          case 'dropbox': {
+            path = input.dropbox['dropbox-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
+            const token = input.dropbox['dropbox-token']?.trim() || existingSection.token || ''
+            if (!token.trim()) throw new Error('Dropbox Token JSON is required.')
+            let tokenObj
+            try {
+              tokenObj = JSON.parse(token)
+            } catch {
+              throw new Error('Invalid JSON in Dropbox Token.')
+            }
+            newSectionLines.push('type = dropbox')
+            newSectionLines.push(`token = ${JSON.stringify(tokenObj)}`)
+            updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
+            updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
+            break
+          }
+          case 'nextcloud': {
+            path = input.nextcloud['nextcloud-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
+            const url = input.nextcloud['nextcloud-url']?.trim() || existingSection.url || ''
+            const user = input.nextcloud['nextcloud-user']?.trim() || existingSection.user || ''
+            let passValue = existingSection.pass || ''
+            const passInput = input.nextcloud['nextcloud-pass']?.trim()
+            if (passInput) {
+              passValue = obscure(passInput)
+            } else if (passValue && !isObscured(passValue)) {
+              passValue = obscure(passValue)
+            }
+            if (!url.trim() || !user.trim() || !passValue.trim()) throw new Error('Nextcloud URL, username, and password are required.')
+            newSectionLines.push('type = webdav')
+            newSectionLines.push(`url = ${url}`)
+            newSectionLines.push('vendor = nextcloud')
+            newSectionLines.push(`user = ${user}`)
+            newSectionLines.push(`pass = ${passValue}`)
+            updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
+            updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
+            break
+          }
+          case 'sftp': {
+            const sftpInput = input.sftp.auth
+            let authInput
+            let passInput: string | undefined
+            let keyInput: string | undefined
+            if (sftpInput.selection === 'password') {
+              authInput = sftpInput.value
+              passInput = authInput['sftp-pass']?.trim()
+              keyInput = undefined
+            } else {
+              authInput = sftpInput.value
+              keyInput = authInput['sftp-key']?.trim()
+              passInput = undefined
+            }
+            path = authInput['sftp-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
+            const host = authInput['sftp-host']?.trim() || existingSection.host || ''
+            const user = authInput['sftp-user']?.trim() || existingSection.user || ''
+            const port = authInput['sftp-port']?.trim() || existingSection.port || '22'
+            let passValue = existingSection.pass || ''
+            if (sftpInput.selection === 'password') {
+              if (passInput) {
+                passValue = obscure(passInput)
+              } else if (passValue && !isObscured(passValue)) {
+                passValue = obscure(passValue)
+              }
+            } else {
+              passValue = ''
+            }
+            let key = existingSection.key_pem || ''
+            if (sftpInput.selection === 'key') {
+              if (keyInput) {
+                // Normalize SDK-mangled key (spaces instead of \n)
+                let normalized = keyInput
+                  .replace(/\\n/g, '\n') // Handle escaped newlines
+                  .replace(/\s+/g, ' ') // Collapse all whitespace
+                key = normalized
+                  .replace(/-----BEGIN OPENSSH PRIVATE KEY-----\s*/, '-----BEGIN OPENSSH PRIVATE KEY-----\n')
+                  .replace(/\s*-----END OPENSSH PRIVATE KEY-----/, '\n-----END OPENSSH PRIVATE KEY-----')
+                  .replace(/\s+/g, '\n')
+                  .trim()
+              }
+            } else {
+              key = ''
+            }
+            const hasPassword = !!passValue.trim()
+            const hasKey = !!key.trim()
+            if (!host.trim() || !user.trim()) throw new Error('SFTP host and username are required.')
+            if (!hasPassword && !hasKey) throw new Error('SFTP requires password or key.')
+            newSectionLines.push('type = sftp')
+            newSectionLines.push(`host = ${host}`)
+            newSectionLines.push(`user = ${user}`)
+            newSectionLines.push(`port = ${port}`)
+            newSectionLines.push('key_use_agent = false')
+            if (hasPassword) {
+              newSectionLines.push(`pass = ${passValue}`)
+            } 
+            if (hasKey) {
+              const escapedKey = key.replace(/\n/g, '\\n')
+              newSectionLines.push(`key_pem = ${escapedKey}`)
+            }
+            updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
+            updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
+            break
+          }
         }
-      })
-const finalConf = (existingConf.trim() + '\n' + newSections.trim()).trim()
-if (finalConf) {
-updates.rcloneConfig = Buffer.from(finalConf, 'utf8').toString('base64')
+        newSections += newSectionLines.join('\n') + '\n'
+        existingConf = removeSection(existingConf, remoteName)
+        const remotePath = `${remoteName}:${path}`
+        newRemotes.push(remotePath)
+        newEnabled.push(remotePath)
       } else {
-updates.rcloneConfig = null
+        const from = input.email['email-from']?.trim() || config.emailBackup?.from || ''
+        const to = input.email['email-to']?.trim() || config.emailBackup?.to || ''
+        const server = input.email['email-smtp-server']?.trim() || config.emailBackup?.smtp_server || 'smtp.gmail.com'
+        const port = input.email['email-smtp-port']?.trim() || config.emailBackup?.smtp_port?.toString() || '465'
+        const user = input.email['email-smtp-user']?.trim() || config.emailBackup?.smtp_user || ''
+        const pass = input.email['email-smtp-pass']?.trim() || config.emailBackup?.smtp_pass || ''
+        if (!from.trim() || !to.trim() || !user.trim() || !pass.trim()) throw new Error('Email from, to, SMTP user, and password are required.')
+        updates.emailBackup = { from, to, smtp_server: server, smtp_port: parseInt(port), smtp_user: user, smtp_pass: pass }
+        updates.emailEnabled = true
       }
-if (newRemotes.length) {
-updates.selectedRcloneRemotes = [...updates.selectedRcloneRemotes, ...newRemotes]
-      }
-if (newEnabled.length) {
-updates.enabledRemotes = [...updates.enabledRemotes, ...newEnabled]
-      }
-await customConfigJson.merge(effects, updates)
-const finalConfig = await customConfigJson.read().once().catch(() => ({})) as any
-await sdk.setHealth(effects, {
-id: 'channel-backup-watcher',
-name: 'Channel Backup Status',
-message: finalConfig?.channelAutoBackupEnabled ? '✅ Active (backing up to cloud)' : '❌ Disabled',
-result: finalConfig?.channelAutoBackupEnabled ? 'success' : 'disabled',
-      })
-return {
-version: '1',
-title: '✅ Backup Targets Added',
-message: 'Your channel.backup will be synced to the selected targets in real time.',
-result: null,
-      }
-    } catch (e) {
-console.error('addBackupTarget submit error:', e)
-return {
-version: '1',
-title: 'Error',
-message: 'An unexpected error occurred. Please try again.',
-result: null,
-      }
+    })
+    const finalConf = (existingConf.trim() + '\n' + newSections.trim()).trim()
+    if (finalConf) {
+      updates.rcloneConfig = Buffer.from(finalConf, 'utf8').toString('base64')
+    } else {
+      updates.rcloneConfig = null
+    }
+    if (newRemotes.length) {
+      updates.selectedRcloneRemotes = [...updates.selectedRcloneRemotes, ...newRemotes]
+    }
+    if (newEnabled.length) {
+      updates.enabledRemotes = [...updates.enabledRemotes, ...newEnabled]
+    }
+    await customConfigJson.merge(effects, updates)
+    const finalConfig = await customConfigJson.read().once().catch(() => ({})) as any
+    await sdk.setHealth(effects, {
+      id: 'channel-backup-watcher',
+      name: 'Channel Backup Status',
+      message: finalConfig?.channelAutoBackupEnabled ? '✅ Active (backing up to cloud)' : '❌ Disabled',
+      result: finalConfig?.channelAutoBackupEnabled ? 'success' : 'disabled',
+    })
+    return {
+      version: '1',
+      title: '✅ Backup Targets Added',
+      message: 'Your channel.backup will be synced to the selected targets in real time.',
+      result: null,
+    }
+  } catch (e) {
+    console.error('addBackupTarget submit error:', e)
+    return {
+      version: '1',
+      title: 'Error',
+      message: 'An unexpected error occurred. Please try again.',
+      result: null,
     }
   }
+}
 )
