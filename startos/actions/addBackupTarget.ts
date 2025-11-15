@@ -1,4 +1,4 @@
-// actions/addBackupTarget.ts-v14
+// actions/addBackupTarget.ts-v16
 import { sdk } from '../sdk'
 import { customConfigJson } from '../fileModels/custom-config.json'
 import * as crypto from 'crypto'
@@ -12,7 +12,9 @@ function parseRcloneConf(conf: string): Record<string, Record<string, string>> {
       currentSection = line.slice(1, -1)
       sections[currentSection] = {}
     } else if (line.includes('=') && currentSection) {
-      const [k, v] = line.split('=', 2).map(s => s.trim())
+      const eqIndex = line.indexOf('=')
+      const k = line.substring(0, eqIndex).trim()
+      const v = line.substring(eqIndex + 1).trim()
       sections[currentSection][k] = v
     }
   })
@@ -399,15 +401,15 @@ sdk.InputSpec.of({
                 ]
               }),
               'sftp-key': sdk.Value.text({
-                name: 'SFTP Private Key',
-                description: 'Paste your full SSH private key (starts with -----BEGIN OPENSSH PRIVATE KEY-----).',
-                default: '',
-                required: false,
-                masked: false,
-                patterns: [
-                  { regex: '^-----BEGIN OPENSSH PRIVATE KEY-----.*-----END OPENSSH PRIVATE KEY-----$', description: 'Must be a valid OpenSSH private key PEM format.' }
-                ]
-              }),
+  name: 'SFTP Private Key',
+  description: 'Paste your full SSH private key (starts with -----BEGIN OPENSSH PRIVATE KEY-----).',
+  default: '',
+  required: false,
+  masked: false,
+  patterns: [
+    { regex: '^-----BEGIN OPENSSH PRIVATE KEY-----[\\s\\S]*-----END OPENSSH PRIVATE KEY-----\\s*$', description: 'Must be a valid OpenSSH private key PEM format.' }
+  ]
+}),
               'sftp-port': sdk.Value.text({
                 name: 'SFTP Port',
                 description: 'Default 22.',
@@ -661,18 +663,20 @@ const authInput = sftpInput.value;
 const host = (authInput as any)['sftp-host']?.trim() || existingSection.host || '';
 const user = (authInput as any)['sftp-user']?.trim() || existingSection.user || '';
 const port = (authInput as any)['sftp-port']?.trim() || existingSection.port || '22';
-// 👇 ASSIGN to the OUTER `path` variable (not re-declare with `const`)
 path = (authInput as any)['sftp-path']?.trim() ||
 config.selectedRcloneRemotes?.find((r: string) => r.startsWith('sftp:'))?.split(':')[1] ||
 'lnd-backups';
+
 if (!host || !user) {
 throw new Error('SFTP host and username are required.');
   }
+
 newSectionLines.push('type = sftp');
 newSectionLines.push(`host = ${host}`);
 newSectionLines.push(`user = ${user}`);
 newSectionLines.push(`port = ${port}`);
 newSectionLines.push('key_use_agent = false');
+
 if (sftpInput.selection === 'password') {
 const passInput = (authInput as any)['sftp-pass']?.trim();
 let passValue = existingSection.pass || '';
@@ -685,31 +689,64 @@ if (passValue) {
 newSectionLines.push(`pass = ${passValue}`);
     }
   } else if (sftpInput.selection === 'key') {
-let keyValue = existingSection.key_pem || '';
-const keyInput = (authInput as any)['sftp-key']?.trim();
-if (keyInput) {
+const keyInput = (authInput as any)['sftp-key'];
+let keyValue = '';
+
+// Only process if user provided a new key
+if (keyInput && keyInput.trim()) {
 const begin = '-----BEGIN OPENSSH PRIVATE KEY-----';
 const end = '-----END OPENSSH PRIVATE KEY-----';
-if (!keyInput.includes(begin) || !keyInput.includes(end)) {
+
+// Normalize line endings
+const normalizedKey = keyInput.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+
+if (!normalizedKey.includes(begin) || !normalizedKey.includes(end)) {
 throw new Error('Invalid SSH key: missing BEGIN/END markers.');
   }
-const startIdx = keyInput.indexOf(begin) + begin.length;
-const endIdx = keyInput.indexOf(end);
-const header = keyInput.substring(0, keyInput.indexOf(begin) + begin.length);
-const footer = keyInput.substring(endIdx);
-const body = keyInput.substring(startIdx, endIdx).replace(/\s+/g, ''); // remove ALL whitespace
-const cleanKey = `${header}\n${body}\n${footer}`;
-// Escape newlines for rclone config
-keyValue = cleanKey.replace(/\n/g, '\\n');
-} else if (!keyValue) {
+  
+// Extract the key block
+const beginIdx = normalizedKey.indexOf(begin);
+const endIdx = normalizedKey.indexOf(end);
+
+if (beginIdx === -1 || endIdx === -1 || endIdx <= beginIdx) {
+throw new Error('Invalid SSH key: malformed structure.');
+}
+
+// Get header, body, and footer
+const header = begin;
+const footer = end;
+const bodyStart = beginIdx + begin.length;
+const bodyEnd = endIdx;
+const body = normalizedKey.substring(bodyStart, bodyEnd).replace(/\s+/g, '');
+
+// Split body into 70-char lines
+const lines = [header];
+for (let i = 0; i < body.length; i += 70) {
+  lines.push(body.substring(i, i + 70));
+}
+lines.push(footer);
+
+const reformattedKey = lines.join('\n');
+console.log('Reformatted key lines:', lines.length);
+
+// Escape newlines for rclone config format
+keyValue = reformattedKey.replace(/\n/g, '\\n');
+} else if (existingSection.key_pem) {
+// Reuse existing key - it's ALREADY escaped with \\n
+keyValue = existingSection.key_pem;
+console.log('Reusing existing key from config');
+}
+
+if (!keyValue) {
 throw new Error('SFTP private key is required.');
-  }
-if (keyValue) {
+}
+
+console.log('Final keyValue length:', keyValue.length);
 newSectionLines.push(`key_pem = ${keyValue}`);
-  }
 } else {
 throw new Error('Invalid SFTP auth selection.');
   }
+
 // Clean old remotes
 updates.selectedRcloneRemotes = (updates.selectedRcloneRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'));
 updates.enabledRemotes = (updates.enabledRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'));
