@@ -1,5 +1,4 @@
-// File: /home/smole/Downloads/racku/startos/actions/addBackupTarget.ts
-// actions/addBackupTarget.ts
+// actions/addBackupTarget.ts-v14
 import { sdk } from '../sdk'
 import { customConfigJson } from '../fileModels/custom-config.json'
 import * as crypto from 'crypto'
