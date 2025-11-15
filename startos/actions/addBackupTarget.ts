@@ -516,23 +516,23 @@ async ({ effects }) => {
       'nextcloud-path': getPath('nextcloud'),
     },
     sftp: (() => {
-  const sftpSection = sections['sftp'] || {}
-  let selection: 'password' | 'key' = 'password'
-  let value: any = {
-    'sftp-host': sftpSection.host || '',
-    'sftp-user': sftpSection.user || '',
-    'sftp-port': sftpSection.port || '22',
-    'sftp-path': getPath('sftp'),
+const sftpSection = sections['sftp'] || {}
+let selection: 'password' | 'key' = 'password'
+let value: any = {
+'sftp-host': sftpSection.host || '',
+'sftp-user': sftpSection.user || '',
+'sftp-port': sftpSection.port || '22',
+'sftp-path': getPath('sftp'),
   }
-  if (sftpSection.key_pem) {
-    selection = 'key'
-    value['sftp-key'] = '' // Masked, don't prefill
+if (sftpSection.key_pem) {
+selection = 'key'
+value['sftp-key'] = '' // Masked, don't prefill
   } else if (sftpSection.pass) {
-    selection = 'password'
-    value['sftp-pass'] = '' // Masked, don't prefill
+selection = 'password'
+value['sftp-pass'] = '' // Masked, don't prefill
   }
-  // ✅ Return as { auth: { selection, value } } to match InputSpec
-  return { auth: { selection, value } }
+// ✅ Return as { auth: { selection, value } } to match InputSpec
+return { auth: { selection, value } }
 })(),
     email: {
       'email-from': config.emailBackup?.from || '',
@@ -657,69 +657,65 @@ async ({ effects, input }) => {
             break
           }
           case 'sftp': {
-            const sftpInput = input.sftp.auth
-            let authInput
-            let passInput: string | undefined
-            let keyInput: string | undefined
-            if (sftpInput.selection === 'password') {
-              authInput = sftpInput.value
-              passInput = authInput['sftp-pass']?.trim()
-              keyInput = undefined
-            } else {
-              authInput = sftpInput.value
-              keyInput = authInput['sftp-key']?.trim()
-              passInput = undefined
-            }
-            path = authInput['sftp-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
-            const host = authInput['sftp-host']?.trim() || existingSection.host || ''
-            const user = authInput['sftp-user']?.trim() || existingSection.user || ''
-            const port = authInput['sftp-port']?.trim() || existingSection.port || '22'
-            let passValue = existingSection.pass || ''
-            if (sftpInput.selection === 'password') {
-              if (passInput) {
-                passValue = obscure(passInput)
-              } else if (passValue && !isObscured(passValue)) {
-                passValue = obscure(passValue)
-              }
-            } else {
-              passValue = ''
-            }
-            let key = existingSection.key_pem || ''
-            if (sftpInput.selection === 'key') {
-              if (keyInput) {
-                // Normalize SDK-mangled key (spaces instead of \n)
-                let normalized = keyInput
-                  .replace(/\\n/g, '\n') // Handle escaped newlines
-                  .replace(/\s+/g, ' ') // Collapse all whitespace
-                key = normalized
-                  .replace(/-----BEGIN OPENSSH PRIVATE KEY-----\s*/, '-----BEGIN OPENSSH PRIVATE KEY-----\n')
-                  .replace(/\s*-----END OPENSSH PRIVATE KEY-----/, '\n-----END OPENSSH PRIVATE KEY-----')
-                  .replace(/\s+/g, '\n')
-                  .trim()
-              }
-            } else {
-              key = ''
-            }
-            const hasPassword = !!passValue.trim()
-            const hasKey = !!key.trim()
-            if (!host.trim() || !user.trim()) throw new Error('SFTP host and username are required.')
-            if (!hasPassword && !hasKey) throw new Error('SFTP requires password or key.')
-            newSectionLines.push('type = sftp')
-            newSectionLines.push(`host = ${host}`)
-            newSectionLines.push(`user = ${user}`)
-            newSectionLines.push(`port = ${port}`)
-            newSectionLines.push('key_use_agent = false')
-            if (hasPassword) {
-              newSectionLines.push(`pass = ${passValue}`)
-            } 
-            if (hasKey) {
-              const escapedKey = key.replace(/\n/g, '\\n')
-              newSectionLines.push(`key_pem = ${escapedKey}`)
-            }
-            updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
-            updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'))
-            break
-          }
+const sftpInput = input.sftp.auth;
+const authInput = sftpInput.value;
+const host = (authInput as any)['sftp-host']?.trim() || existingSection.host || '';
+const user = (authInput as any)['sftp-user']?.trim() || existingSection.user || '';
+const port = (authInput as any)['sftp-port']?.trim() || existingSection.port || '22';
+// 👇 ASSIGN to the OUTER `path` variable (not re-declare with `const`)
+path = (authInput as any)['sftp-path']?.trim() ||
+config.selectedRcloneRemotes?.find((r: string) => r.startsWith('sftp:'))?.split(':')[1] ||
+'lnd-backups';
+if (!host || !user) {
+throw new Error('SFTP host and username are required.');
+  }
+newSectionLines.push('type = sftp');
+newSectionLines.push(`host = ${host}`);
+newSectionLines.push(`user = ${user}`);
+newSectionLines.push(`port = ${port}`);
+newSectionLines.push('key_use_agent = false');
+if (sftpInput.selection === 'password') {
+const passInput = (authInput as any)['sftp-pass']?.trim();
+let passValue = existingSection.pass || '';
+if (passInput) {
+passValue = obscure(passInput);
+    } else if (passValue && !isObscured(passValue)) {
+passValue = obscure(passValue);
+    }
+if (passValue) {
+newSectionLines.push(`pass = ${passValue}`);
+    }
+  } else if (sftpInput.selection === 'key') {
+let keyValue = existingSection.key_pem || '';
+const keyInput = (authInput as any)['sftp-key']?.trim();
+if (keyInput) {
+const begin = '-----BEGIN OPENSSH PRIVATE KEY-----';
+const end = '-----END OPENSSH PRIVATE KEY-----';
+if (!keyInput.includes(begin) || !keyInput.includes(end)) {
+throw new Error('Invalid SSH key: missing BEGIN/END markers.');
+  }
+const startIdx = keyInput.indexOf(begin) + begin.length;
+const endIdx = keyInput.indexOf(end);
+const header = keyInput.substring(0, keyInput.indexOf(begin) + begin.length);
+const footer = keyInput.substring(endIdx);
+const body = keyInput.substring(startIdx, endIdx).replace(/\s+/g, ''); // remove ALL whitespace
+const cleanKey = `${header}\n${body}\n${footer}`;
+// Escape newlines for rclone config
+keyValue = cleanKey.replace(/\n/g, '\\n');
+} else if (!keyValue) {
+throw new Error('SFTP private key is required.');
+  }
+if (keyValue) {
+newSectionLines.push(`key_pem = ${keyValue}`);
+  }
+} else {
+throw new Error('Invalid SFTP auth selection.');
+  }
+// Clean old remotes
+updates.selectedRcloneRemotes = (updates.selectedRcloneRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'));
+updates.enabledRemotes = (updates.enabledRemotes || []).filter((r: unknown) => typeof r === 'string' && !r.startsWith('sftp:'));
+break;
+}
         }
         newSections += newSectionLines.join('\n') + '\n'
         existingConf = removeSection(existingConf, remoteName)
