@@ -61,14 +61,15 @@ export const addBackupTarget = sdk.Action.withInput(
     name: 'Channels - Auto-Backup',
     description: 'Add and configure backup targets for your channel.backup file. You can select multiple providers (Nextcloud, Dropbox, Google, Email, SFTP) and multiple email recipients.',
     warning: `<details>
-  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>IMPORTANT</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="m" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
-  <div class="tui-space_top-4"><br>CHANNEL.BACKUP file is encrypted with your AEZEED Cipher Seed so it can be stored on third-party servers without any risk.<br> Email is the most recommended backup method but for maximum security use it with at least one additional backup provider.</div>
+  <summary>
+  <b>IMPORTANT</b></summary>
+  <div><br>CHANNEL.BACKUP file is encrypted with your AEZEED Cipher Seed so it can be stored on third-party servers without any risk.<br> Email is the most recommended backup method but for maximum security use it with at least one additional backup provider.</div>
   <h3 class="tui-space_top-6">Setup examples:</h3>
   <hr class="tui-space_vertical-4">
   <details>
-  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>EMAIL</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="s" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
+  <summary><b>EMAIL</b></summary>
   <br>
-  <div class="tui-space_top-4">In the example below, SMTP2GO is used as SMTP provider because the setup is straightforward and the service is free.</div>
+  <div>In the example below, SMTP2GO is used as SMTP provider because the setup is straightforward and the service is free.</div>
   <table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
@@ -87,7 +88,7 @@ export const addBackupTarget = sdk.Action.withInput(
     </tbody>
   </table>
   <br>
-    <div class="tui-space_top-4">💡 Any SMTP provider works! We recommend SMTP2GO, MailerSend, or Gmail (all free).</div>
+    <div>💡 Any SMTP provider works! We recommend SMTP2GO, MailerSend, or Gmail (all free).</div>
   <table class="g-table tui-space_top-4">
     <thead>
       <tr><th>✅ Recommended SMTP Providers</th></tr>
@@ -102,7 +103,7 @@ export const addBackupTarget = sdk.Action.withInput(
 </details>
 <hr>
 <details>
-  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>SFTP</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="s" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
+  <summary><b>SFTP</b></summary>
   <table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
@@ -143,9 +144,9 @@ export const addBackupTarget = sdk.Action.withInput(
       </td></tr>
       <tr><td>5️⃣</td><td><strong>In LND SFTP Settings</strong>:<br>
         <strong>SFTP Host</strong>: IP from Step 3 (e.g., <code>192.168.1.20</code>)<br>
-        <strong>SFTP Username</strong>: Your login username (e.g., <code>smole</code>, <code>pi</code>)<br>
+        <strong>SFTP Username</strong>: Your login username (e.g., <code>user</code>, <code>admin</code>)<br>
         <strong>SFTP Port</strong>: <code>22</code> (default)<br>
-        <strong>SFTP Folder Path</strong>: Backup folder (e.g., <code>/home/smole/lnd-backups</code> or <code>C:\\lnd-backups</code>)<br>
+        <strong>SFTP Folder Path</strong>: Path to the backup folder (e.g., <code>lnd-backups</code> or <code>subfolder/lnd-backups</code>). Use relative paths without a leading '/' to place it in your home directory.<br>
         → <strong>Create this folder first</strong> if it doesn’t exist.
       </td></tr>
       <tr><td>6️⃣</td><td>Click <strong>Submit</strong>, then test with <strong>“Test Channels Auto-Backup”</strong>.</td></tr>
@@ -156,7 +157,7 @@ export const addBackupTarget = sdk.Action.withInput(
 </details>
 <hr>
 <details>
-  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>Nextcloud</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="s" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
+  <summary><b>Nextcloud</b></summary>
   <table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
@@ -176,8 +177,8 @@ export const addBackupTarget = sdk.Action.withInput(
 </details>
 <hr>
 <details>
-  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>Dropbox</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="s" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
-  <div class="tui-space_top-4">You’ll need to generate a Dropbox token using <code>rclone</code> on another machine.</div>
+  <summary><b>Dropbox</b></summary>
+  <div>You’ll need to generate a Dropbox token using <code>rclone</code> on another machine.</div>
   <table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
@@ -194,8 +195,8 @@ export const addBackupTarget = sdk.Action.withInput(
 </details>
 <hr>
 <details>
-  <summary class="tui-background-neutral-1 tui-space_horizontal-2 tui-space_vertical-2 tui-border-radius-m"><b>Google Drive</b> <span tuiappearance="" tuiicons="" tuiiconbutton="" size="s" iconstart="@tui.chevron-down" type="button" class="button tui-border-radius-full"></span></summary>
-  <div class="tui-space_top-4">Google Drive requires a <strong>Service Account</strong> with access to a shared folder.</div>
+  <summary><b>Google Drive</b></summary>
+  <div>Google Drive requires a <strong>Service Account</strong> with access to a shared folder.</div>
   <table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
@@ -224,15 +225,208 @@ export const addBackupTarget = sdk.Action.withInput(
 sdk.InputSpec.of({
   providers: sdk.Value.multiselect({
     name: 'Enabled Backup Providers 🞃',
+    description: 'Enable or disable backup providers. Unchecking a provider deletes its settings from the config on submit. Settings for disabled providers are discarded on submit.',
     default: [],
     values: {
-      'gdrive': 'Google Drive',
-      'dropbox': 'Dropbox',
-      'nextcloud': 'Nextcloud',
-      'sftp': 'SFTP',
-      'email': 'Email',
-    },
+    'email': 'Email',
+    'sftp': 'SFTP',
+    'nextcloud': 'Nextcloud',
+    'dropbox': 'Dropbox',
+    'gdrive': 'Google Drive',
+  },
   }),
+  email: sdk.Value.object(
+    {
+      name: 'Email Settings',
+      description: `<div>Here you can configure settings for Email backup. Your <code>channel.backup</code> file will be <strong>automatically attached and emailed</strong> every time it changes — that means whenever you <strong>open a new channel</strong>,
+  <strong>close a channel</strong>, or Lightning updates the backup for any other reason.</div>
+<div><strong>You’ll receive an email within seconds</strong> of every channel state change.</div>`,
+    },
+    sdk.InputSpec.of({
+      'email-from': sdk.Value.text({
+        name: 'Email Sender Address',
+        description: 'Your sender email (e.g., yourusername@gmail.com), which will be used as the From address. If you need an SMTP server, use the same email address with whichever provider you decide to open an account with.',
+        default: '',
+        required: false,
+        patterns: [
+    {
+      regex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
+      description: 'Must be a valid email address'
+    }
+  ],
+      }),
+      'email-to': sdk.Value.text({
+        name: 'Email Recipient Address',
+        description: `Recipient email can be the same as sender, but try to add at least 2 email recipients addresses and try to mix email providers. Example: <code>youremail@protonmail.com, youremail@gmail.com, youremail@tutanota.com, famillymemberemail@gmail.com, friendemail@gmail.com</code></div>`,
+        default: '',
+        required: false,
+        patterns: [
+    {
+      regex: '^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})(\\s*,\\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})*$',
+      description: 'Must be one or more valid email addresses separated by commas'
+    }
+  ],
+      }),
+      'email-smtp-server': sdk.Value.text({
+        name: 'Email SMTP Server',
+        description: `<table><thead><tr><th>✅ Recommended SMTP Providers</th></tr></thead>
+                        <tbody>
+                        <tr><td><b>MailerSend</b> ⇢ <a href="https://www.mailersend.com/" target="_blank">mailersend.com 🔗</a><br/>– Free tier: 500 emails/month, no domain required.<br/>– Use your <b>verified email</b> as "From" address.</td></tr>
+                        <tr><td><b>SMTP2Go</b> ⇢ <a href="https://www.smtp2go.com/" target="_blank">smtp2go.com 🔗</a><br/>– Free tier: 1,000 emails/month, no domain required.<br/>– SMTP server: <code>mail.smtp2go.com</code>, port 465 or 587.</td></tr>
+                        <tr><td><b>Gmail</b> ⇢ <a href="https://mail.google.com/" target="_blank">mail.google.com 🔗</a><br/>– Free tier: 500 emails/day, requires App Password (2FA must be ON).<br/>⚠️ Emails can <b>only be sent to @gmail.com addresses</b> unless you verify a custom "From" address.</td></tr>
+                        <tr><td><b>Proton Mail</b> ⇢ <a href="https://mail.proton.me/" target="_blank">mail.proton.me 🔗</a><br/>– Free tier: NONE, smtp access requires <b>paid plan</b>.<br/>– SMTP server: <code>smtp.proton.me</code>, port 465 or 587.</td></tr>
+                        </tbody>
+                        </table>`,
+        default: 'smtp.gmail.com',
+        required: false,
+        patterns: [
+    {
+      regex: '^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$',
+      description: 'Must be a valid hostname'
+    }
+  ],
+      }),
+      'email-smtp-port': sdk.Value.text({
+        name: 'Email SMTP Port',
+        description: '465 for SSL, 587 for TLS.',
+        default: '465',
+        required: false,
+        patterns: [
+                  { regex: '^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$', description: 'Must be between 1 and 65535. E.g., use 587 (TLS) or 465 (SSL).' }
+                ],
+      }),
+      'email-smtp-user': sdk.Value.text({
+        name: 'Email SMTP Username',
+        description: 'Usually the sender email.',
+        default: '',
+        required: false,
+        patterns: [
+                  { regex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$', description: 'Can contain letters, numbers, @, underscores, and hyphens.' }
+                ]
+      }),
+      'email-smtp-pass': sdk.Value.text({
+        name: 'Email SMTP Password',
+        description: 'Enter your (Sender) email account password. Gmail users: use an App Password (required if 2FA is on).',
+        default: '',
+        masked: true,
+        required: false,
+      }),
+    }),
+  ),
+   sftp: sdk.Value.object(
+    {
+      name: 'SFTP Settings',
+      description: 'Configure SFTP backups to your remote or local server using a password or SSH key. Although you can use a LAN computer (desktop or laptop), keep in mind that it needs to stay powered on 24/7. For better reliability, consider options like a Raspberry Pi or NAS.',
+    },
+    sdk.InputSpec.of({
+      auth: sdk.Value.union({
+        name: 'Authentication Type',
+        description: 'Choose password or SSH key.',
+        default: 'password',
+        variants: sdk.Variants.of({
+          password: {
+            name: 'Password',
+            spec: sdk.InputSpec.of({
+              'sftp-host': sdk.Value.text({
+                name: 'SFTP Host',
+                description: 'Hostname or IP of the SFTP server / LAN device (desktop, laptop, Raspberry Pi, NAS ...).',
+                default: '',
+                required: false,
+                patterns: [
+                  { regex: '^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)+([A-Za-z0-9]|[A-Za-z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])|(\\d{1,3}\\.){3}\\d{1,3})$', description: 'Must be a valid domain or IP address.' }
+                ]
+              }),
+              'sftp-user': sdk.Value.text({
+                name: 'SFTP Username',
+                description: 'Login username.',
+                default: '',
+                required: false,
+                patterns: [
+                  { regex: '^([a-zA-Z0-9._-]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})$', description: 'Can contain letters, numbers, @, underscores, and hyphens.' }
+                ]
+              }),
+              'sftp-pass': sdk.Value.text({
+                name: 'SFTP Password',
+                description: 'Login password.',
+                default: '',
+                masked: true,
+                required: false,
+              }),
+              'sftp-port': sdk.Value.text({
+                name: 'SFTP Port',
+                description: 'Default port is 22. If you use shared hosting some providers use a different port (e.g., 2222) so check with your provider.',
+                default: '22',
+                required: false,
+                patterns: [
+                  { regex: '^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$', description: 'Must be between 1 and 65535.' }
+                ]
+              }),
+              'sftp-path': sdk.Value.text({
+                name: 'SFTP Folder Path',
+                description: 'Path to the backup folder (e.g., <code>lnd-backups</code> or <code>subfolder/lnd-backups</code>). Use relative paths without a leading /.',
+                default: 'lnd-backups',
+                required: false,
+                patterns: [
+                  { regex: '^/?([a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]*$', description: 'Optional leading /, valid characters (alphanum, _, -).' }
+                ]
+              }),
+            }),
+          },
+          key: {
+            name: 'SSH Key',
+            spec: sdk.InputSpec.of({
+              'sftp-host': sdk.Value.text({
+                name: 'SFTP Host',
+                description: 'Hostname or IP of the SFTP server.',
+                default: '',
+                required: false,
+                patterns: [
+                  { regex: '^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)+([A-Za-z0-9]|[A-Za-z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])|(\\d{1,3}\\.){3}\\d{1,3})$', description: 'Must be a valid domain or IP address.' }
+                ]
+              }),
+              'sftp-user': sdk.Value.text({
+                name: 'SFTP Username',
+                description: 'Login username.',
+                default: '',
+                required: false,
+                patterns: [
+                  { regex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$', description: 'Can contain letters, numbers, @, underscores, and hyphens.' }
+                ]
+              }),
+              'sftp-key': sdk.Value.text({
+  name: 'SFTP Private Key',
+  description: 'Paste your full SSH private key (starts with -----BEGIN OPENSSH PRIVATE KEY-----).',
+  default: '',
+  required: false,
+  masked: false,
+  patterns: [
+    { regex: '^-----BEGIN OPENSSH PRIVATE KEY-----[\\s\\S]*-----END OPENSSH PRIVATE KEY-----\\s*$', description: 'Must be a valid OpenSSH private key PEM format.' }
+  ]
+}),
+              'sftp-port': sdk.Value.text({
+                name: 'SFTP Port',
+                description: 'Default 22.',
+                default: '22',
+                required: false,
+                patterns: [
+                  { regex: '^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$', description: 'Must be between 1 and 65535.' }
+                ]
+              }),
+              'sftp-path': sdk.Value.text({
+                name: 'SFTP Folder Path',
+                description: 'Example: /path/to/lnd-backups',
+                default: 'lnd-backups',
+                required: false,
+                patterns: [
+                  { regex: '^/?([a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]*$', description: 'Optional leading /, valid characters (alphanum, _, -).' }
+                ]
+              }),
+            }),
+          },
+        }),
+      }),
+    }),
+  ),
   google: sdk.Value.object(
     {
       name: 'Google Drive Settings',
@@ -320,174 +514,7 @@ sdk.InputSpec.of({
       }),
     }),
   ),
-  sftp: sdk.Value.object(
-    {
-      name: 'SFTP Settings',
-      description: 'Configure SFTP backup with password or SSH key.',
-    },
-    sdk.InputSpec.of({
-      auth: sdk.Value.union({
-        name: 'Authentication Type',
-        description: 'Choose password or SSH key.',
-        default: 'password',
-        variants: sdk.Variants.of({
-          password: {
-            name: 'Password',
-            spec: sdk.InputSpec.of({
-              'sftp-host': sdk.Value.text({
-                name: 'SFTP Host',
-                description: 'Hostname or IP of the SFTP server.',
-                default: '',
-                required: false,
-                patterns: [
-                  { regex: '^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)+([A-Za-z0-9]|[A-Za-z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])|(\\d{1,3}\\.){3}\\d{1,3})$', description: 'Must be a valid domain or IP address.' }
-                ]
-              }),
-              'sftp-user': sdk.Value.text({
-                name: 'SFTP Username',
-                description: 'Login username.',
-                default: '',
-                required: false,
-                patterns: [
-                  { regex: '^[a-zA-Z0-9_-]+$', description: 'Can contain letters, numbers, underscores, and hyphens.' }
-                ]
-              }),
-              'sftp-pass': sdk.Value.text({
-                name: 'SFTP Password',
-                description: 'Password (stored obscured internally).',
-                default: '',
-                masked: true,
-                required: false,
-              }),
-              'sftp-port': sdk.Value.text({
-                name: 'SFTP Port',
-                description: 'Default 22.',
-                default: '22',
-                required: false,
-                patterns: [
-                  { regex: '^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$', description: 'Must be between 1 and 65535.' }
-                ]
-              }),
-              'sftp-path': sdk.Value.text({
-                name: 'SFTP Folder Path',
-                description: 'Example: /path/to/lnd-backups',
-                default: 'lnd-backups',
-                required: false,
-                patterns: [
-                  { regex: '^/?([a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]*$', description: 'Optional leading /, valid characters (alphanum, _, -).' }
-                ]
-              }),
-            }),
-          },
-          key: {
-            name: 'SSH Key',
-            spec: sdk.InputSpec.of({
-              'sftp-host': sdk.Value.text({
-                name: 'SFTP Host',
-                description: 'Hostname or IP of the SFTP server.',
-                default: '',
-                required: false,
-                patterns: [
-                  { regex: '^((([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)+([A-Za-z0-9]|[A-Za-z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])|(\\d{1,3}\\.){3}\\d{1,3})$', description: 'Must be a valid domain or IP address.' }
-                ]
-              }),
-              'sftp-user': sdk.Value.text({
-                name: 'SFTP Username',
-                description: 'Login username.',
-                default: '',
-                required: false,
-                patterns: [
-                  { regex: '^[a-zA-Z0-9_-]+$', description: 'Can contain letters, numbers, underscores, and hyphens.' }
-                ]
-              }),
-              'sftp-key': sdk.Value.text({
-  name: 'SFTP Private Key',
-  description: 'Paste your full SSH private key (starts with -----BEGIN OPENSSH PRIVATE KEY-----).',
-  default: '',
-  required: false,
-  masked: false,
-  patterns: [
-    { regex: '^-----BEGIN OPENSSH PRIVATE KEY-----[\\s\\S]*-----END OPENSSH PRIVATE KEY-----\\s*$', description: 'Must be a valid OpenSSH private key PEM format.' }
-  ]
-}),
-              'sftp-port': sdk.Value.text({
-                name: 'SFTP Port',
-                description: 'Default 22.',
-                default: '22',
-                required: false,
-                patterns: [
-                  { regex: '^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$', description: 'Must be between 1 and 65535.' }
-                ]
-              }),
-              'sftp-path': sdk.Value.text({
-                name: 'SFTP Folder Path',
-                description: 'Example: /path/to/lnd-backups',
-                default: 'lnd-backups',
-                required: false,
-                patterns: [
-                  { regex: '^/?([a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]*$', description: 'Optional leading /, valid characters (alphanum, _, -).' }
-                ]
-              }),
-            }),
-          },
-        }),
-      }),
-    }),
-  ),
-  email: sdk.Value.object(
-    {
-      name: 'Email Settings',
-      description: `<div>Here you can configure settings for Email backup. Your <code>channel.backup</code> file will be <strong>automatically attached and emailed</strong> every time it changes — that means whenever you <strong>open a new channel</strong>,
-  <strong>close a channel</strong>, or Lightning updates the backup for any other reason.</div>
-<div><strong>You’ll receive an email within seconds</strong> of every channel state change.</div>`,
-    },
-    sdk.InputSpec.of({
-      'email-from': sdk.Value.text({
-        name: 'Email Sender Address',
-        description: 'For Email: Sender email (e.g., yourusername@gmail.com).',
-        default: '',
-        required: false,
-      }),
-      'email-to': sdk.Value.text({
-        name: 'Email Recipient Address',
-        description: `Recipient email can be the same as sender, but try to add at least 2 email recipients addresses and try to mix email providers. Example: <code>youremail@protonmail.com, youremail@gmail.com, youremail@tutanota.com, famillymemberemail@gmail.com, friendemail@gmail.com</code></div>`,
-        default: '',
-        required: false,
-      }),
-      'email-smtp-server': sdk.Value.text({
-        name: 'Email SMTP Server',
-        description: `<table><thead><tr><th>✅ Recommended SMTP Providers</th></tr></thead>
-                        <tbody>
-                        <tr><td><b>MailerSend</b> ⇢ <a href="https://www.mailersend.com/" target="_blank">mailersend.com 🔗</a><br/>– Free tier: 3,000 emails/month, no domain required.<br/>– Use your <b>verified email</b> as "From" address.</td></tr>
-                        <tr><td><b>SMTP2Go</b> ⇢ <a href="https://www.smtp2go.com/" target="_blank">smtp2go.com 🔗</a><br/>– Free tier: 1,000 emails/month, no domain required.<br/>– SMTP server: <code>mail.smtp2go.com</code>, port 465 or 587.</td></tr>
-                        <tr><td><b>Gmail</b> ⇢ <a href="https://mail.google.com/" target="_blank">mail.google.com 🔗</a><br/>– Free tier: 500 emails/day, requires App Password (2FA must be ON).<br/>⚠️ Emails can <b>only be sent to @gmail.com addresses</b> unless you verify a custom "From" address.</td></tr>
-                        <tr><td><b>Proton Mail</b> ⇢ <a href="https://mail.proton.me/" target="_blank">mail.proton.me 🔗</a><br/>– Free tier: NONE, smtp access requires <b>paid plan</b>.<br/>– SMTP server: <code>smtp.proton.me</code>, port 465 or 587.</td></tr>
-                        </tbody>
-                        </table>`,
-        default: 'mail.smtp2go.com',
-        required: false,
-      }),
-      'email-smtp-port': sdk.Value.text({
-        name: 'Email SMTP Port',
-        description: 'For Email: 465 for SSL, 587 for TLS.',
-        default: '465',
-        required: false,
-      }),
-      'email-smtp-user': sdk.Value.text({
-        name: 'Email SMTP Username',
-        description: 'For Email: Usually the sender email.',
-        default: '',
-        required: false,
-      }),
-      'email-smtp-pass': sdk.Value.text({
-        name: 'Email SMTP Password',
-        description: 'For Email: App password if using Gmail (enable 2FA and create at myaccount.google.com/apppasswords). Stored in plain text internally.',
-        default: '',
-        masked: true,
-        required: false,
-      }),
-    }),
-  ),
+ 
 }),
 async ({ effects }) => {
   const config = (await customConfigJson.read().once().catch(() => ({}))) as any
@@ -500,6 +527,32 @@ async ({ effects }) => {
   }) as typeof VALID_PROVIDERS[number][]
   return {
     providers: selectedProviders,
+    email: {
+      'email-from': config.emailBackup?.from || '',
+      'email-to': config.emailBackup?.to || '',
+      'email-smtp-server': config.emailBackup?.smtp_server || 'smtp.gmail.com',
+      'email-smtp-port': config.emailBackup?.smtp_port?.toString() || '465',
+      'email-smtp-user': config.emailBackup?.smtp_user || '',
+      'email-smtp-pass': '',
+    },
+    sftp: (() => {
+      const sftpSection = sections['sftp'] || {}
+      let selection: 'password' | 'key' = 'password'
+      let value: any = {
+      'sftp-host': sftpSection.host || '',
+      'sftp-user': sftpSection.user || '',
+      'sftp-port': sftpSection.port || '22',
+      'sftp-path': getPath('sftp'),
+      }
+      if (sftpSection.key_pem) {
+      selection = 'key'
+      value['sftp-key'] = ''
+      } else if (sftpSection.pass) {
+      selection = 'password'
+      value['sftp-pass'] = ''
+      }
+      return { auth: { selection, value } }
+    })(),
     google: {
       'gdrive-key': '',
       'gdrive-path': getPath('gdrive'),
@@ -516,33 +569,7 @@ async ({ effects }) => {
       'nextcloud-pass': '',
       'nextcloud-path': getPath('nextcloud'),
     },
-    sftp: (() => {
-const sftpSection = sections['sftp'] || {}
-let selection: 'password' | 'key' = 'password'
-let value: any = {
-'sftp-host': sftpSection.host || '',
-'sftp-user': sftpSection.user || '',
-'sftp-port': sftpSection.port || '22',
-'sftp-path': getPath('sftp'),
-  }
-if (sftpSection.key_pem) {
-selection = 'key'
-value['sftp-key'] = '' // Masked, don't prefill
-  } else if (sftpSection.pass) {
-selection = 'password'
-value['sftp-pass'] = '' // Masked, don't prefill
-  }
-// ✅ Return as { auth: { selection, value } } to match InputSpec
-return { auth: { selection, value } }
-})(),
-    email: {
-      'email-from': config.emailBackup?.from || '',
-      'email-to': config.emailBackup?.to || '',
-      'email-smtp-server': config.emailBackup?.smtp_server || 'smtp.gmail.com',
-      'email-smtp-port': config.emailBackup?.smtp_port?.toString() || '465',
-      'email-smtp-user': config.emailBackup?.smtp_user || '',
-      'email-smtp-pass': '',
-    },
+   
   }
 },
 async ({ effects, input }) => {
