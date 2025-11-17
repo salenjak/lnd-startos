@@ -178,20 +178,24 @@ export const addBackupTarget = sdk.Action.withInput(
 <hr>
 <details>
   <summary><b>Dropbox</b></summary>
-  <div>You’ll need to generate a Dropbox token using <code>rclone</code> on another machine.</div>
+  <div>You'll need to create a Dropbox App and generate an access token.</div>
   <table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
-      <tr><td>1️⃣</td><td>Install <code>rclone</code> on Linux/macOS/Windows (see <a href="https://rclone.org/install/" target="_blank">rclone.org/install</a>)</td></tr>
-      <tr><td>2️⃣</td><td>Run in terminal:<br><code>rclone config create mydropbox dropbox</code></td></tr>
-      <tr><td>3️⃣</td><td>A browser will open — <strong>log in to Dropbox</strong> and grant access.</td></tr>
-      <tr><td>4️⃣</td><td>After success, run:<br><code>cat ~/.config/rclone/rclone.conf</code> (Linux/macOS)<br>or check <code>%USERPROFILE%\\.config\\rclone\\rclone.conf</code> (Windows)</td></tr>
-      <tr><td>5️⃣</td><td>Find the <code>[mydropbox]</code> section and copy the entire <code>token = { ... }</code> JSON line.</td></tr>
-      <tr><td>6️⃣</td><td>In LND Auto-Backup, paste this JSON into <strong>“Dropbox Token (JSON)”</strong>.</td></tr>
-      <tr><td>7️⃣</td><td>Click <strong>Submit</strong> → Run <strong>Test Backup</strong>.</td></tr>
+      <tr><td>1️⃣</td><td><strong>Go to</strong> <a href="https://www.dropbox.com/developers/apps/create" target="_blank">Dropbox App Console</a></td></tr>
+      <tr><td>2️⃣</td><td><strong>Choose API</strong>: Select "Scoped access"</td></tr>
+      <tr><td>3️⃣</td><td><strong>Choose access type</strong>: Select "App folder", not "Full Dropbox" (expire in 4 hours)</td></tr>
+      <tr><td>4️⃣</td><td><strong>Name your app</strong>: e.g., "LND Backup"</td></tr>
+      <tr><td>5️⃣</td><td><strong>Permissions tab</strong>: Enable <code>files.content.write</code></td></tr>
+      <tr><td>6️⃣</td><td><strong>Settings tab → OAuth 2</strong>: Click "Generate access token"</td></tr>
+      <tr><td>7️⃣</td><td><strong>Copy the token</strong> (starts with <code>sl....</code>)</td></tr>
+      <tr><td>8️⃣</td><td>In LND Auto-Backup, paste the token into <strong>"Dropbox Access Token"</strong></td></tr>
+      <tr><td>9️⃣</td><td>Set folder path, e.g., <code>/lnd-backups</code></td></tr>
+      <tr><td>🔟</td><td>Click <strong>Submit</strong> → Run <strong>Test Backup</strong></td></tr>
     </tbody>
   </table>
-  ⚠️ The token is long and contains sensitive OAuth data — keep it secure.
+  <br>
+  ⚠️ <strong>Note</strong>: The access token has no expiration but can be revoked from the Dropbox App Console.
 </details>
 <hr>
 <details>
@@ -230,8 +234,8 @@ sdk.InputSpec.of({
     values: {
     'email': 'Email',
     'sftp': 'SFTP',
-    'nextcloud': 'Nextcloud',
     'dropbox': 'Dropbox',
+    'nextcloud': 'Nextcloud',
     'gdrive': 'Google Drive',
   },
   }),
@@ -320,7 +324,7 @@ sdk.InputSpec.of({
     },
     sdk.InputSpec.of({
       auth: sdk.Value.union({
-        name: 'Authentication Type',
+        name: 'Select Authentication Type',
         description: 'Choose password or SSH key.',
         default: 'password',
         variants: sdk.Variants.of({
@@ -466,20 +470,26 @@ sdk.InputSpec.of({
       description: 'Configure settings for Dropbox backup.',
     },
     sdk.InputSpec.of({
-      'dropbox-token': sdk.Value.text({
-        name: 'Dropbox Token (JSON)',
-        description: 'For Dropbox: Run `rclone config create mydropbox dropbox` on your local machine, complete OAuth in browser, then copy the "token = {...}" JSON from ~/.rclone.conf and paste here.',
-        default: '',
-        masked: true,
-        required: false,
-      }),
-      'dropbox-path': sdk.Value.text({
-        name: 'Dropbox Folder Path',
-        description: 'For Dropbox: Example: lnd-backups',
-        default: 'lnd-backups',
-        required: false,
-      }),
-    }),
+  'dropbox-token': sdk.Value.text({
+    name: 'Dropbox Access Token',
+    description: 'Paste your Dropbox access token here (the raw token starting with "sl." - NOT JSON). Get it from: Dropbox App Console → Create App → Generate Access Token.',
+    default: '',
+    masked: true,
+    required: false,
+  }),
+  'dropbox-path': sdk.Value.text({
+    name: 'Dropbox Folder Path',
+    description: 'Folder path in your Dropbox (e.g., lnd-backups or /Apps/LND Backup/lnd-backups). Will be created automatically.',
+    default: 'lnd-backups',
+    required: false,
+    patterns: [
+      {
+        regex: '^[a-zA-Z0-9_\\-/ ]+$',
+        description: 'Valid folder path (alphanumeric, spaces, hyphens, underscores, forward slashes)'
+      }
+    ],
+  }),
+}),
   ),
   nextcloud: sdk.Value.object(
     {
@@ -648,21 +658,36 @@ async ({ effects, input }) => {
             break
           }
           case 'dropbox': {
-            path = input.dropbox['dropbox-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
-            const token = input.dropbox['dropbox-token']?.trim() || existingSection.token || ''
-            if (!token.trim()) throw new Error('Dropbox Token JSON is required.')
-            let tokenObj
-            try {
-              tokenObj = JSON.parse(token)
-            } catch {
-              throw new Error('Invalid JSON in Dropbox Token.')
-            }
-            newSectionLines.push('type = dropbox')
-            newSectionLines.push(`token = ${JSON.stringify(tokenObj)}`)
-            updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
-            updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:'))
-            break
-          }
+  path = input.dropbox['dropbox-path']?.trim() ?? 
+         config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 
+         'lnd-backups'
+  
+  const token = input.dropbox['dropbox-token']?.trim() || existingSection.token || ''
+  if (!token.trim()) throw new Error('Dropbox Access Token is required.')
+  
+  // Validate token format (Dropbox tokens start with "sl.")
+  if (!token.startsWith('sl.')) {
+    throw new Error('Invalid Dropbox token. Must start with "sl." - generate it from Dropbox App Console.')
+  }
+
+  // Build the rclone token object (rclone expects this specific JSON structure)
+  const tokenObj = {
+    access_token: token,
+    token_type: 'bearer',
+    expiry: '0001-01-01T00:00:00Z'
+  }
+
+  newSectionLines.push('type = dropbox')
+  newSectionLines.push(`token = ${JSON.stringify(tokenObj)}`)
+  
+  updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter(
+    (r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:')
+  )
+  updates.enabledRemotes = updates.enabledRemotes.filter(
+    (r: unknown) => typeof r === 'string' && !r.startsWith('dropbox:')
+  )
+  break
+}
           case 'nextcloud': {
             path = input.nextcloud['nextcloud-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
             const url = input.nextcloud['nextcloud-url']?.trim() || existingSection.url || ''
