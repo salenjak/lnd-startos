@@ -431,6 +431,33 @@ sdk.InputSpec.of({
       }),
     }),
   ),
+  dropbox: sdk.Value.object(
+    {
+      name: 'Dropbox Settings',
+      description: 'Configure settings for Dropbox backup.',
+    },
+    sdk.InputSpec.of({
+  'dropbox-token': sdk.Value.text({
+    name: 'Dropbox Access Token',
+    description: 'Paste your Dropbox access token here (the raw token starting with "sl." - NOT JSON). Get it from: Dropbox App Console → Create App → Generate Access Token.',
+    default: '',
+    masked: true,
+    required: false,
+  }),
+  'dropbox-path': sdk.Value.text({
+    name: 'Dropbox Folder Path',
+    description: 'Folder path in your Dropbox (e.g., lnd-backups or /Apps/LND Backup/lnd-backups). Will be created automatically.',
+    default: 'lnd-backups',
+    required: false,
+    patterns: [
+      {
+        regex: '^[a-zA-Z0-9_\\-/ ]+$',
+        description: 'Valid folder path (alphanumeric, spaces, hyphens, underscores, forward slashes)'
+      }
+    ],
+  }),
+}),
+  ),
   google: sdk.Value.object(
     {
       name: 'Google Drive Settings',
@@ -463,33 +490,6 @@ sdk.InputSpec.of({
         required: false,
       }),
     }),
-  ),
-  dropbox: sdk.Value.object(
-    {
-      name: 'Dropbox Settings',
-      description: 'Configure settings for Dropbox backup.',
-    },
-    sdk.InputSpec.of({
-  'dropbox-token': sdk.Value.text({
-    name: 'Dropbox Access Token',
-    description: 'Paste your Dropbox access token here (the raw token starting with "sl." - NOT JSON). Get it from: Dropbox App Console → Create App → Generate Access Token.',
-    default: '',
-    masked: true,
-    required: false,
-  }),
-  'dropbox-path': sdk.Value.text({
-    name: 'Dropbox Folder Path',
-    description: 'Folder path in your Dropbox (e.g., lnd-backups or /Apps/LND Backup/lnd-backups). Will be created automatically.',
-    default: 'lnd-backups',
-    required: false,
-    patterns: [
-      {
-        regex: '^[a-zA-Z0-9_\\-/ ]+$',
-        description: 'Valid folder path (alphanumeric, spaces, hyphens, underscores, forward slashes)'
-      }
-    ],
-  }),
-}),
   ),
   nextcloud: sdk.Value.object(
     {
@@ -662,15 +662,34 @@ async ({ effects, input }) => {
          config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 
          'lnd-backups'
   
-  const token = input.dropbox['dropbox-token']?.trim() || existingSection.token || ''
-  if (!token.trim()) throw new Error('Dropbox Access Token is required.')
+  const tokenInput = input.dropbox['dropbox-token']?.trim()
+  let token = ''
+
+  // If user provided new token, use it
+  if (tokenInput) {
+    token = tokenInput
+  } 
+  // Otherwise, try to reuse existing token from rclone config
+  else if (existingSection.token) {
+    try {
+      const existingTokenObj = JSON.parse(existingSection.token)
+      token = existingTokenObj.access_token
+    } catch {
+      // If parsing fails, might already be a plain string
+      token = existingSection.token
+    }
+  }
+
+  if (!token) {
+    throw new Error('Dropbox Access Token is required.')
+  }
   
-  // Validate token format (Dropbox tokens start with "sl.")
-  if (!token.startsWith('sl.')) {
+  // Validate token format only if it's a new token (existing tokens might have different formats)
+  if (tokenInput && !token.startsWith('sl.')) {
     throw new Error('Invalid Dropbox token. Must start with "sl." - generate it from Dropbox App Console.')
   }
 
-  // Build the rclone token object (rclone expects this specific JSON structure)
+  // Build the rclone token object
   const tokenObj = {
     access_token: token,
     token_type: 'bearer',
