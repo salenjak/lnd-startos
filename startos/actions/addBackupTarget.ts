@@ -73,7 +73,7 @@ export const addBackupTarget = sdk.Action.withInput(
   <summary><b>EMAIL</b></summary>
   <br>
   <div>In the example below, SMTP2GO is used as SMTP provider because the setup is straightforward and the service is free.</div>
-  <table class="g-table tui-space_top-4">
+  <br><table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
       <tr><td>1️⃣</td><td><b>Sign up</b> at <u><a href="https://www.smtp2go.com/" target="_blank">smtp2go.com</a></u> (Free: 1k emails/mo)</td></tr>
@@ -92,7 +92,7 @@ export const addBackupTarget = sdk.Action.withInput(
   </table>
   <br>
     <div>💡 Any SMTP provider works! We recommend SMTP2GO, MailerSend, or Gmail (all free).</div>
-  <table class="g-table tui-space_top-4">
+    <br><table class="g-table tui-space_top-4">
     <thead>
       <tr><th>✅ Recommended SMTP Providers</th></tr>
     </thead>
@@ -107,7 +107,7 @@ export const addBackupTarget = sdk.Action.withInput(
 <hr>
 <details>
   <summary><b>SFTP</b></summary>
-  <table class="g-table tui-space_top-4">
+    <br><table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
       <tr><td>1️⃣</td><td><b>Choose a remote server / LAN computer</b> (desktop, laptop, Raspberry Pi, or NAS) that stays powered on.</td></tr>
@@ -161,8 +161,7 @@ export const addBackupTarget = sdk.Action.withInput(
 <hr>
 <details>
   <summary><b>Dropbox</b></summary>
-    <div>💡 If you have allready have Dropbox Refresh Token just enter it in <b>Dropbox Refresh Token (optional)</b> and proceed to step 8.</div>
-  <table class="g-table tui-space_top-4">
+    <br><table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
       <tr><td>1️⃣</td><td>Go to <u><a href="https://www.dropbox.com/developers/apps" target="_blank">Dropbox App Console 🔗</a></u> → Create app (or use existing)</td></tr>
@@ -170,10 +169,11 @@ export const addBackupTarget = sdk.Action.withInput(
       <tr><td>3️⃣</td><td>Give it a name → Create app</td></tr>
       <tr><td>4️⃣</td><td>Permissions → enable <code>files.content.write</code> and <code>files.content.read</code></td></tr>
       <tr><td>5️⃣</td><td>Copy <b>App key</b> (client_id) and <b>App secret</b> (client_secret)</td></tr>
-      <tr><td>6️⃣</td><td>Open your browser and paste this Dropbox OAuth 2 URL, replacing <b><i>APP_KEY</i></b> with your App key:<br>
-        <i>https://www.dropbox.com/oauth2/authorize?client_id=APP_KEY&response_type=code&token_access_type=offline</i><br>
+      <tr><td>6️⃣</td><td>💡 If you allready have Refresh Token just proceed to step 7.<br>
+        <hr>Open your browser and paste this Dropbox OAuth 2 URL, replacing <b><i>APP_KEY</i></b> with your App key:<br><br>
+        <i>https://www.dropbox.com/oauth2/authorize?client_id=APP_KEY&response_type=code&token_access_type=offline</i><br><br>
         <span>Log in to Dropbox → Allow the app: Copy the <b>Dropbox Authorization Code</b> from the URL (after ?code=) or from the page if displayed.</span><br></td></tr>
-      <tr><td>7️⃣</td><td>In LND  → Channels - Auto-Backup  → Dropbox settings, paste:<ul><li><b>Dropbox App Key</b>: Your App key</li><li><b>Dropbox App Secret</b>: Your App secret</li><li><b>Dropbox Authorization Code</b>: The code from step 6</li></ul></td></tr>
+      <tr><td>7️⃣</td><td>In LND  → Channels - Auto-Backup  → Dropbox settings, paste:<ul><li><b>Dropbox App Key</b>: Your App key</li><li><b>Dropbox App Secret</b>: Your App secret</li><li><b>Dropbox Authorization Code</b>: The code from step 6 (fill only if you do NOT already have a Refresh Token)</li><li><b>Dropbox Refresh Token</b>: Paste your existing refresh token here if you have one OR leave empty → a new one will be generated automatically (Authorization Code is then required)</li></ul></td></tr>
       <tr><td>8️⃣</td><td>Folder path: enter new path or leave default <code>lnd-backups</code></td></tr>
       <tr><td>9️⃣</td><td>Click <b>Submit</b> → Provided settings will be exchanged for Dropbox Refresh Token automatically. Run <b>Channels - Test Auto-Backup</b>.</td></tr>
     </tbody>
@@ -182,7 +182,7 @@ export const addBackupTarget = sdk.Action.withInput(
 <hr>
 <details>
   <summary><b>Nextcloud</b></summary>
-  <table class="g-table tui-space_top-4">
+    <br><table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
       <tr><td>1️⃣</td><td><b>Log in</b> to your Nextcloud instance.</td></tr>
@@ -203,7 +203,7 @@ export const addBackupTarget = sdk.Action.withInput(
 <details>
   <summary><b>Google Drive</b></summary>
   <div>Google Drive requires a <b>Service Account</b> with access to a shared folder.</div>
-  <table class="g-table tui-space_top-4">
+    <br><table class="g-table tui-space_top-4">
     <thead><tr><th>Step</th><th>Action</th></tr></thead>
     <tbody>
       <tr><td>1️⃣</td><td>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> → Create a project (e.g., “lnd-backup”).</td></tr>
@@ -246,7 +246,7 @@ sdk.InputSpec.of({
       name: 'Email Settings',
       description: `<div>Here you can configure settings for Email backup. Your <code>channel.backup</code> file will be <b>automatically attached and emailed</b> every time it changes — that means whenever you <b>open a new channel</b>,
   <b>close a channel</b>, or Lightning updates the backup for any other reason.</div>
-<div><b>You’ll receive an email within seconds</b> of every channel state change.</div>`,
+<div><b>You’ll receive an email within seconds</b> of every channel state change.</div><br> (Check Email setup example in "IMPORTANT" section above for more info).`,
     },
     sdk.InputSpec.of({
       'email-from': sdk.Value.text({
@@ -322,7 +322,7 @@ sdk.InputSpec.of({
    sftp: sdk.Value.object(
     {
       name: 'SFTP Settings',
-      description: 'Configure SFTP backups to your remote or local server using a password or SSH key. Although you can use a LAN computer (desktop or laptop), keep in mind that it needs to stay powered on 24/7. For better reliability, consider options like a Raspberry Pi or NAS.',
+      description: `Configure SFTP backups to your remote or local server using a password or SSH key. Although you can use a LAN computer (desktop or laptop), keep in mind that it needs to stay powered on 24/7. For better reliability, consider options like a Raspberry Pi or NAS.<br> (Check SFTP setup example in "IMPORTANT" section above for more info).`,
     },
     sdk.InputSpec.of({
       auth: sdk.Value.union({
@@ -436,7 +436,7 @@ sdk.InputSpec.of({
   dropbox: sdk.Value.object(
   {
     name: 'Dropbox Settings',
-    description: 'Provide either App Key + App Secret + Authorization Code to auto-generate Refresh Token or App Key + App Secret + Refresh Token',
+    description: `Provide either App Key + App Secret + Authorization Code to auto-generate Refresh Token or App Key + App Secret + Refresh Token.<br> (Check Dropbox setup example in "IMPORTANT" section above for more info)`,
   },
   sdk.InputSpec.of({
     'dropbox-client-id': sdk.Value.text({
@@ -460,7 +460,7 @@ sdk.InputSpec.of({
       required: false,
     }),
     'dropbox-refresh-token': sdk.Value.text({
-      name: `Dropbox Refresh Token (paste or generate using Auth Code above)`,
+      name: `Dropbox Refresh Token (paste | generate using Auth Code)`,
       description: `If you already have a long-lived refresh token, paste it here. Otherwise, enter your App Key, App Secret, and Authorization Code in the fields above. After submission, a new Refresh Token will be generated. You can then copy it along with your App Key and App Secret for safekeeping.`,
       default: '',
       masked: true,
@@ -480,43 +480,10 @@ sdk.InputSpec.of({
     }),
   })
 ),
-  google: sdk.Value.object(
-    {
-      name: 'Google Drive Settings',
-      description: 'Configure settings for Google Drive backup.',
-    },
-    sdk.InputSpec.of({
-      'gdrive-key': sdk.Value.text({
-        name: 'Google Service Account Key (JSON)',
-        description: 'For Google Drive: Paste the contents of your Google Service Account JSON key file.',
-        default: '',
-        masked: true,
-        required: false,
-      }),
-      'gdrive-path': sdk.Value.text({
-        name: 'Google Drive Folder Path',
-        description: 'For Google Drive: Example: lnd-backups',
-        default: 'lnd-backups',
-        required: false,
-      }),
-      'gdrive-team-drive': sdk.Value.text({
-        name: 'Google Shared Drive ID',
-        description: 'For Google Drive (Workspace accounts): ID of the shared drive. Optional for personal accounts.',
-        default: '',
-        required: false,
-      }),
-      'gdrive-folder-id': sdk.Value.text({
-        name: 'Google Folder ID (for personal accounts)',
-        description: 'For free Google accounts: ID of the shared folder (from URL: drive.google.com/drive/folders/<ID>). Required if no Shared Drive ID.',
-        default: '',
-        required: false,
-      }),
-    }),
-  ),
   nextcloud: sdk.Value.object(
     {
       name: 'Nextcloud Settings',
-      description: 'Configure settings for Nextcloud backup.',
+      description: `Configure settings for Nextcloud backup.<br> (Check Nextcloud setup example in "IMPORTANT" section above for more info).`,
     },
     sdk.InputSpec.of({
       'nextcloud-url': sdk.Value.text({
@@ -546,7 +513,39 @@ sdk.InputSpec.of({
       }),
     }),
   ),
- 
+  google: sdk.Value.object(
+    {
+      name: 'Google Drive Settings',
+      description: `Configure settings for Google Drive backup.<br> (Check Google Drive setup example in "IMPORTANT" section above for more info).`,
+    },
+    sdk.InputSpec.of({
+      'gdrive-key': sdk.Value.text({
+        name: 'Google Service Account Key (JSON)',
+        description: 'For Google Drive: Paste the contents of your Google Service Account JSON key file.',
+        default: '',
+        masked: true,
+        required: false,
+      }),
+      'gdrive-path': sdk.Value.text({
+        name: 'Google Drive Folder Path',
+        description: 'For Google Drive: Example: lnd-backups',
+        default: 'lnd-backups',
+        required: false,
+      }),
+      'gdrive-team-drive': sdk.Value.text({
+        name: 'Google Shared Drive ID',
+        description: 'For Google Drive (Workspace accounts): ID of the shared drive. Optional for personal accounts.',
+        default: '',
+        required: false,
+      }),
+      'gdrive-folder-id': sdk.Value.text({
+        name: 'Google Folder ID (for personal accounts)',
+        description: 'For free Google accounts: ID of the shared folder (from URL: drive.google.com/drive/folders/<ID>). Required if no Shared Drive ID.',
+        default: '',
+        required: false,
+      }),
+    }),
+  ), 
 }),
 async ({ effects }) => {
   const config = (await customConfigJson.read().once().catch(() => ({}))) as any
@@ -782,26 +781,35 @@ async ({ effects, input }) => {
   break;
 }
           case 'nextcloud': {
-            path = input.nextcloud['nextcloud-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
-            const url = input.nextcloud['nextcloud-url']?.trim() || existingSection.url || ''
-            const user = input.nextcloud['nextcloud-user']?.trim() || existingSection.user || ''
-            let passValue = existingSection.pass || ''
-            const passInput = input.nextcloud['nextcloud-pass']?.trim()
-            if (passInput) {
-              passValue = obscure(passInput)
-            } else if (passValue && !isObscured(passValue)) {
-              passValue = obscure(passValue)
-            }
-            if (!url.trim() || !user.trim() || !passValue.trim()) throw new Error('Nextcloud URL, username, and password are required.')
-            newSectionLines.push('type = webdav')
-            newSectionLines.push(`url = ${url}`)
-            newSectionLines.push('vendor = nextcloud')
-            newSectionLines.push(`user = ${user}`)
-            newSectionLines.push(`pass = ${passValue}`)
-            updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
-            updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
-            break
-          }
+  path = input.nextcloud['nextcloud-path']?.trim() ?? config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 'lnd-backups'
+  const url = input.nextcloud['nextcloud-url']?.trim() || existingSection.url || ''
+  const user = input.nextcloud['nextcloud-user']?.trim() || existingSection.user || ''
+  let passValue = existingSection.pass || ''
+  const passInput = input.nextcloud['nextcloud-pass']?.trim()
+  if (passInput) {
+    passValue = obscure(passInput)
+  } else if (passValue && !isObscured(passValue)) {
+    passValue = obscure(passValue)
+  }
+  if (!url.trim() || !user.trim() || !passValue.trim()) throw new Error('Nextcloud URL, username, and password are required.')
+  
+  newSectionLines.push('type = webdav')
+  newSectionLines.push(`url = ${url}`)
+  newSectionLines.push('vendor = nextcloud')
+  newSectionLines.push(`user = ${user}`)
+  newSectionLines.push(`pass = ${passValue}`)
+  
+  if (url.includes('.onion')) {
+    // Use the correct Tor proxy address from lnd.conf
+    newSectionLines.push('http_proxy = socks5://10.0.3.1:9050')
+    newSectionLines.push('https_proxy = socks5://10.0.3.1:9050')
+    newSectionLines.push('no_check_certificate = true')
+  }
+
+  updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
+  updates.enabledRemotes = updates.enabledRemotes.filter((r: unknown) => typeof r === 'string' && !r.startsWith('nextcloud:'))
+  break
+}
           case 'sftp': {
 const sftpInput = input.sftp.auth;
 const authInput = sftpInput.value;
@@ -819,9 +827,14 @@ throw new Error('SFTP host and username are required.');
 newSectionLines.push('type = sftp');
 newSectionLines.push(`host = ${host}`);
 newSectionLines.push(`user = ${user}`);
-newSectionLines.push(`port = ${port}`);
 newSectionLines.push('key_use_agent = false');
-
+if (host.endsWith('.onion')) {
+    newSectionLines.push('socks_proxy = 10.0.3.1:9050');
+    newSectionLines.push('shell_type = unix');
+    newSectionLines.push('md5sum_command = md5sum');
+    newSectionLines.push('sha1sum_command = sha1sum');
+  }
+newSectionLines.push(`port = ${port}`);
 if (sftpInput.selection === 'password') {
 const passInput = (authInput as any)['sftp-pass']?.trim();
 let passValue = existingSection.pass || '';
