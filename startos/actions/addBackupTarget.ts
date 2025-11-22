@@ -488,26 +488,29 @@ sdk.InputSpec.of({
     sdk.InputSpec.of({
       'nextcloud-url': sdk.Value.text({
         name: 'Nextcloud WebDAV URL',
-        description: 'For Nextcloud: Base URL, e.g., https://your.nextcloud.com/remote.php/dav/files/yourusername/',
+        description: `Replace <b>your.nextcloud.com</b> with your domain and <b>yourusername</b> with your Nextcloud username. Base URL, e.g., https://your.nextcloud.com/remote.php/dav/files/yourusername/, https://youronionaddress.onion/remote.php/dav/files/yourusername/`,
         default: '',
         required: false,
       }),
       'nextcloud-user': sdk.Value.text({
         name: 'Nextcloud Username',
-        description: 'For Nextcloud: Your login username.',
+        description: 'Your login username. Default is admin.',
         default: '',
         required: false,
       }),
       'nextcloud-pass': sdk.Value.text({
         name: 'Nextcloud Password',
-        description: 'For Nextcloud: App password or login password (stored in plain text internally).',
+        description: `1️⃣	Log in to your Nextcloud instance.<br>
+        2️⃣	Go to Settings → Security → Devices & sessions.<br>
+        3️⃣	Under “App passwords”, create a new app password (e.g., “LND Backup”).<br>
+        4️⃣	Copy the generated password — also save it as you won’t see it again!`,
         default: '',
         masked: true,
         required: false,
       }),
       'nextcloud-path': sdk.Value.text({
         name: 'Nextcloud Folder Path',
-        description: 'For Nextcloud: Example: lnd-backups',
+        description: 'Folder will be created if it doesn’t exist. Example: lnd-backups',
         default: 'lnd-backups',
         required: false,
       }),
@@ -942,12 +945,7 @@ break;
     }
     await customConfigJson.merge(effects, updates)
     const finalConfig = await customConfigJson.read().once().catch(() => ({})) as any
-    await sdk.setHealth(effects, {
-      id: 'channel-backup-watcher',
-      name: 'Channel Backup Status',
-      message: finalConfig?.channelAutoBackupEnabled ? '✅ Active (backing up to cloud)' : '❌ Disabled',
-      result: finalConfig?.channelAutoBackupEnabled ? 'success' : 'disabled',
-    })
+    
     return {
       version: '1',
       title: '✅ Backup Provider(s) Added/Edited',
