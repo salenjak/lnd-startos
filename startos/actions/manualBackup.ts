@@ -6,7 +6,7 @@ export const manualBackup = sdk.Action.withoutInput(
   'manual-backup',
   async ({ effects }) => ({
     name: 'Channels - Test Auto-Backup',
-    description: 'Manually trigger a backup of the channel.backup file (lncli exportchanbackup --all).',
+    description: 'Manually trigger a backup of the channel.backup file to enabled backup providers.',
     warning: null,
     allowedStatuses: 'only-running',
     group: 'Backup',
@@ -27,8 +27,7 @@ export const manualBackup = sdk.Action.withoutInput(
       async (sub) => {
         return await sub.exec([
           'sh', '-c',
-          `lncli --rpcserver=lnd.startos exportchanbackup --all --output_file "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup" && \
-           touch "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup"`
+          `lncli --rpcserver=lnd.startos exportchanbackup --all --output_file "${lndDataDir}/data/chain/bitcoin/mainnet/channel.backup"`
         ])
       }
     )
