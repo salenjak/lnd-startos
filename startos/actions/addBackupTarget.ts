@@ -507,7 +507,7 @@ sdk.InputSpec.of({
       required: false,
     }),
     'dropbox-refresh-token': sdk.Value.text({
-      name: `Dropbox Refresh Token (paste | generate using Auth Code)`,
+      name: `Dropbox Refresh Token (paste / generate using Auth Code)`,
       description: `If you already have a long-lived refresh token, paste it here. Otherwise, enter your App Key, App Secret, and Authorization Code in the fields above. After submission, a new Refresh Token will be generated. You can then copy it along with your App Key and App Secret for safekeeping.`,
       default: '',
       masked: true,
@@ -564,45 +564,54 @@ sdk.InputSpec.of({
     }),
   ),
   google: sdk.Value.object(
-    {
-      name: 'Google Drive Settings',
-      description: `<div><b>Google Drive - Personal Accounts (Free)</b></div>
-<div>Google Drive requires OAuth authorization so you need to provide next data to enable this backup provider: OAuth Client ID, OAuth Client Secret and Authorization Code. Follow the setup instructions in the "IMPORTANT" section above to create OAuth Client ID, OAuth Client Secret and Authorization Code.</div>`,
-    },
-    sdk.InputSpec.of({
-      'gdrive-client-id': sdk.Value.text({
-        name: 'Google OAuth Client ID',
-        description: 'From Google Cloud Console → OAuth credentials. Example: 123456789-abc123.apps.googleusercontent.com.<br> Follow the Google Drive setup example in the "IMPORTANT" section above to create OAuth Client ID.',
-        default: '',
-        required: false,
-      }),
-      'gdrive-client-secret': sdk.Value.text({
-        name: 'Google OAuth Client Secret',
-        description: 'From Google Cloud Console → OAuth credentials. Example: GOCSPX-xxxxxxxxxxxxx.<br> Follow the Google Drive setup example in the "IMPORTANT" section above to create OAuth Client Secret.',
-        default: '',
-        masked: true,
-        required: false,
-      }),
-      'gdrive-auth-code': sdk.Value.text({
-        name: 'Authorization Code',
-        description: `<div>💡 To get the authorization code, open this URL in your browser, replacing <b>CLIENT_ID</b> with your Client ID:</div>
+  {
+    name: 'Google Drive Settings',
+    description: `<div><b>Google Drive - Personal Accounts (Free)</b></div>
+<div>Google Drive requires OAuth authorization. Provide either:<br>
+• <b>Client ID + Client Secret + Authorization Code</b> → auto-generate Refresh Token<br>
+• <b>Client ID + Client Secret + Refresh Token</b> → skip OAuth</div>`,
+  },
+  sdk.InputSpec.of({
+    'gdrive-client-id': sdk.Value.text({
+      name: 'Google OAuth Client ID',
+      description: 'From Google Cloud Console → OAuth credentials. Example: ...-....apps.googleusercontent.com.<br> Follow the Google Drive setup example in the "IMPORTANT" section above to get OAuth Client ID.',
+      default: '',
+      required: false,
+    }),
+    'gdrive-client-secret': sdk.Value.text({
+      name: 'Google OAuth Client Secret',
+      description: 'From Google Cloud Console → OAuth credentials.<br> Follow the Google Drive setup example in the "IMPORTANT" section above to get OAuth Client Secret.',
+      default: '',
+      masked: true,
+      required: false,
+    }),
+    'gdrive-auth-code': sdk.Value.text({
+      name: 'Authorization Code (if no Refresh Token)',
+      description: `<div>💡 To get the authorization code, replace <b>CLIENT_ID</b> with your Client ID and then open following URL in your browser:</div><br>
 <code>https://accounts.google.com/o/oauth2/v2/auth?client_id=CLIENT_ID&redirect_uri=http://localhost&response_type=code&scope=https://www.googleapis.com/auth/drive&access_type=offline&prompt=consent</code>
 <div>After visiting the authorization URL and clicking "Allow", paste the code from your browser's redirect URL here. You can paste either:<br>
         • The full URL: <code>http://localhost/?code=4/0A...</code><br>
         • OR just the code: <code>4/0A...</code><br>
-        <br>Leave empty if you already have a working setup.</div>`,
-        default: '',
-        masked: true,
-        required: false,
-      }),
-      'gdrive-path': sdk.Value.text({
-        name: 'Google Drive Folder Path',
-        description: 'Folder name in your Google Drive root (e.g., lnd-backups). Will be created automatically.',
-        default: 'lnd-backups',
-        required: false,
-      }),
+        <br>Leave empty if you already have a refresh token.</div>`,
+      default: '',
+      masked: true,
+      required: false,
     }),
-  ), 
+    'gdrive-refresh-token': sdk.Value.text({
+      name: 'Refresh Token (paste / generate using Authorization Code)',
+      description: `If you already have a refresh token, paste it here. After successful OAuth, this field will show the generated token for backup.`,
+      default: '',
+      masked: true,
+      required: false,
+    }),
+    'gdrive-path': sdk.Value.text({
+      name: 'Google Drive Folder Path',
+      description: 'Folder name in your Google Drive root (e.g., lnd-backups).',
+      default: 'lnd-backups',
+      required: false,
+    }),
+  }),
+),
 }),
 async ({ effects }) => {
   const config = (await customConfigJson.read().once().catch(() => ({}))) as any
@@ -648,13 +657,19 @@ async ({ effects }) => {
       return { auth: { selection, value } }
     })(),
     google: {
-      'gdrive-client-id': existingClientId,
-      'gdrive-client-secret': gdriveSection.client_secret || '',
-      'gdrive-auth-code': '', // Never pre-fill auth code
-      'gdrive-path': getPath('gdrive'),
-      // Note: In a real implementation, you'd display the authUrl to the user
-      // For now, we log it or could add it to the description dynamically
-    },
+  'gdrive-client-id': existingClientId,
+  'gdrive-client-secret': gdriveSection.client_secret || '',
+  'gdrive-auth-code': '', // Never pre-fill auth code
+  'gdrive-refresh-token': (() => {
+    try {
+      const tokenObj = JSON.parse(gdriveSection.token || '{}');
+      return tokenObj.refresh_token || '';
+    } catch (e) {
+      return '';
+    }
+  })(),
+  'gdrive-path': getPath('gdrive'),
+},
     dropbox: (() => {
       const dropboxSection = sections['dropbox'] || {}
       let refreshToken = ''
@@ -738,123 +753,122 @@ async ({ effects, input }) => {
         
         switch (provider) {
           case 'gdrive': {
-            path = input.google['gdrive-path']?.trim() ?? 
-              config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 
-              'lnd-backups'
-            
-            const clientId = input.google['gdrive-client-id']?.trim()
-            const clientSecret = input.google['gdrive-client-secret']?.trim()
-            const authCodeInput = input.google['gdrive-auth-code']?.trim()
-            
-            // Check if we have existing config
-            const existingClientId = existingSection.client_id || ''
-            const existingClientSecret = existingSection.client_secret || ''
-            const existingToken = existingSection.token || ''
-            
-            // Use new values if provided, otherwise use existing
-            const finalClientId = clientId || existingClientId
-            const finalClientSecret = clientSecret || existingClientSecret
-            let finalToken = existingToken
-            
-            // If user provided a new authorization code, exchange it for tokens
-            if (authCodeInput && finalClientId && finalClientSecret) {
-              console.log('Exchanging authorization code for Google Drive tokens...')
-              
-              // Extract code from URL if full URL was provided
-              let authCode = authCodeInput
-              if (authCodeInput.includes('code=')) {
-                const match = authCodeInput.match(/code=([^&]+)/)
-                if (match) {
-                  authCode = match[1]
-                }
-              }
-              
-              // Exchange authorization code for tokens using Google OAuth2 API
-              try {
-                const tokenResponse = await new Promise<any>((resolve, reject) => {
-                  const postData = new URLSearchParams({
-                    code: authCode,
-                    client_id: finalClientId,
-                    client_secret: finalClientSecret,
-                    redirect_uri: 'http://localhost',
-                    grant_type: 'authorization_code',
-                  }).toString()
-                  
-                  const options = {
-                    hostname: 'oauth2.googleapis.com',
-                    path: '/token',
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/x-www-form-urlencoded',
-                      'Content-Length': postData.length
-                    }
-                  }
-                  
-                  const req = https.request(options, (res) => {
-                    let data = ''
-                    res.on('data', (chunk) => { data += chunk })
-                    res.on('end', () => {
-                      if (res.statusCode !== 200) {
-                        reject(new Error(`Google OAuth failed (${res.statusCode}): ${data}`))
-                      } else {
-                        try {
-                          resolve(JSON.parse(data))
-                        } catch (e) {
-                          reject(new Error(`Failed to parse Google response: ${data}`))
-                        }
-                      }
-                    })
-                  })
-                  
-                  req.on('error', reject)
-                  req.write(postData)
-                  req.end()
-                })
-                
-                // Validate token response
-                if (!tokenResponse.access_token || !tokenResponse.refresh_token) {
-                  throw new Error('Google did not return valid tokens. Make sure you copied the complete authorization code.')
-                }
-                
-                // Format token for rclone
-                const expiry = new Date(Date.now() + (tokenResponse.expires_in * 1000)).toISOString()
-                finalToken = JSON.stringify({
-                  access_token: tokenResponse.access_token,
-                  token_type: tokenResponse.token_type || 'Bearer',
-                  refresh_token: tokenResponse.refresh_token,
-                  expiry: expiry
-                })
-                
-                console.log('✅ Successfully obtained Google Drive tokens')
-              } catch (err) {
-                console.error('Failed to exchange authorization code:', err)
-                throw new Error(`Failed to authorize with Google: ${(err as Error).message}. Please try again and make sure you copied the complete authorization code from the redirect URL.`)
-              }
-            }
-            
-            if (!finalClientId || !finalClientSecret) {
-              throw new Error('Google Drive requires Client ID and Client Secret.')
-            }
-            
-            if (!finalToken) {
-              const authUrl = generateGoogleAuthUrl(finalClientId)
-              throw new Error(`Google Drive authorization required. Please visit this URL to authorize:\n\n${authUrl}\n\nThen paste the authorization code in the field above and submit again.`)
-            }
-            
-            newSectionLines.push('type = drive')
-            newSectionLines.push('scope = drive')
-            newSectionLines.push(`client_id = ${finalClientId}`)
-            newSectionLines.push(`client_secret = ${finalClientSecret}`)
-            newSectionLines.push(`token = ${finalToken}`)
-            
-            updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter(
-              (r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:')
-            )
-            updates.enabledRemotes = updates.enabledRemotes.filter(
-              (r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:')
-            )
-            break
+  path = input.google['gdrive-path']?.trim() ?? 
+    config.selectedRcloneRemotes?.find((r: string) => r.startsWith(remoteName + ':'))?.split(':')[1] ?? 
+    'lnd-backups'
+  const clientId = input.google['gdrive-client-id']?.trim()
+  const clientSecret = input.google['gdrive-client-secret']?.trim()
+  const authCodeInput = input.google['gdrive-auth-code']?.trim()
+  const refreshTokenInput = input.google['gdrive-refresh-token']?.trim()  // ← NEW
+  // Check if we have existing config
+  const existingClientId = existingSection.client_id || ''
+  const existingClientSecret = existingSection.client_secret || ''
+  const existingToken = existingSection.token || ''
+  // Use new values if provided, otherwise use existing
+  const finalClientId = clientId || existingClientId
+  const finalClientSecret = clientSecret || existingClientSecret
+  let finalToken = existingToken
+
+  // ← NEW: If user provided a refresh token directly, use it
+  if (refreshTokenInput && finalClientId && finalClientSecret) {
+    const dummyExpiry = '2020-01-01T00:00:00Z'
+    finalToken = JSON.stringify({
+      access_token: "DUMMY",
+      token_type: "Bearer",
+      refresh_token: refreshTokenInput,
+      expiry: dummyExpiry
+    })
+  }
+  // If user provided a new authorization code, exchange it for tokens
+  else if (authCodeInput && finalClientId && finalClientSecret) {
+    console.log('Exchanging authorization code for Google Drive tokens...')
+    // Extract code from URL if full URL was provided
+    let authCode = authCodeInput
+    if (authCodeInput.includes('code=')) {
+      const match = authCodeInput.match(/code=([^&]+)/)
+      if (match) {
+        authCode = match[1]
+      }
+    }
+    // Exchange authorization code for tokens using Google OAuth2 API
+    try {
+      const tokenResponse = await new Promise<any>((resolve, reject) => {
+        const postData = new URLSearchParams({
+          code: authCode,
+          client_id: finalClientId,
+          client_secret: finalClientSecret,
+          redirect_uri: 'http://localhost',
+          grant_type: 'authorization_code',
+        }).toString()
+        const options = {
+          hostname: 'oauth2.googleapis.com',
+          path: '/token',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': postData.length
           }
+        }
+        const req = https.request(options, (res) => {
+          let data = ''
+          res.on('data', (chunk) => { data += chunk })
+          res.on('end', () => {
+            if (res.statusCode !== 200) {
+              reject(new Error(`Google OAuth failed (${res.statusCode}): ${data}`))
+            } else {
+              try {
+                resolve(JSON.parse(data))
+              } catch (e) {
+                reject(new Error(`Failed to parse Google response: ${data}`))
+              }
+            }
+          })
+        })
+        req.on('error', reject)
+        req.write(postData)
+        req.end()
+      })
+      // Validate token response
+      if (!tokenResponse.access_token || !tokenResponse.refresh_token) {
+        throw new Error('Google did not return valid tokens. Make sure you copied the complete authorization code.')
+      }
+      // Format token for rclone
+      const expiry = new Date(Date.now() + (tokenResponse.expires_in * 1000)).toISOString()
+      finalToken = JSON.stringify({
+        access_token: tokenResponse.access_token,
+        token_type: tokenResponse.token_type || 'Bearer',
+        refresh_token: tokenResponse.refresh_token,
+        expiry: expiry
+      })
+      console.log('✅ Successfully obtained Google Drive tokens')
+    } catch (err) {
+      console.error('Failed to exchange authorization code:', err)
+      throw new Error(`Failed to authorize with Google: ${(err as Error).message}. Please try again and make sure you copied the complete authorization code from the redirect URL.`)
+    }
+  }
+
+  if (!finalClientId || !finalClientSecret) {
+    throw new Error('Google Drive requires Client ID and Client Secret.')
+  }
+  if (!finalToken) {
+    const authUrl = generateGoogleAuthUrl(finalClientId)
+    throw new Error(`Google Drive authorization required. Please visit this URL to authorize:
+${authUrl}
+Then paste the authorization code or refresh token in the fields above and submit again.`)
+  }
+  newSectionLines.push('type = drive')
+  newSectionLines.push('scope = drive')
+  newSectionLines.push(`client_id = ${finalClientId}`)
+  newSectionLines.push(`client_secret = ${finalClientSecret}`)
+  newSectionLines.push(`token = ${finalToken}`)
+  updates.selectedRcloneRemotes = updates.selectedRcloneRemotes.filter(
+    (r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:')
+  )
+  updates.enabledRemotes = updates.enabledRemotes.filter(
+    (r: unknown) => typeof r === 'string' && !r.startsWith('gdrive:')
+  )
+  break
+}
           
           case 'dropbox': {
             path = input.dropbox['dropbox-path']?.trim() ??
