@@ -26,7 +26,7 @@ export const manifest = setupManifest({
   images: {
     lnd: {
       source: {
-        dockerTag: 'lightninglabs/lnd:v0.19.3-beta',
+        dockerTag: 'lightninglabs/lnd:v0.20.0-beta',
       },
       arch,
     } as SDKImageInputSpec,
