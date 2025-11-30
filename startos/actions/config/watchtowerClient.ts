@@ -41,7 +41,7 @@ export const wtClientConfig = sdk.Action.withInput(
     description: 'Edit the Watchtower Client settings in lnd.conf',
     warning: null,
     allowedStatuses: 'any',
-    group: 'Watchtower',
+    group: 'Security',
     visibility: 'enabled',
   }),
 

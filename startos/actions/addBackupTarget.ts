@@ -1,4 +1,3 @@
-// actions/addBackupTarget.ts - Complete version with Google Drive OAuth
 import { sdk } from '../sdk'
 import { customConfigJson } from '../fileModels/custom-config.json'
 import * as crypto from 'crypto'
@@ -272,7 +271,7 @@ export const addBackupTarget = sdk.Action.withInput(
 </details>
   </details>`,
   allowedStatuses: 'only-running',
-  group: 'Backup',
+  group: 'Security',
   visibility: 'enabled',
 }),
 sdk.InputSpec.of({

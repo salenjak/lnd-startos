@@ -1,4 +1,3 @@
-// actions/manualBackup.ts
 import { sdk } from '../sdk'
 import { lndDataDir } from '../utils'
 
@@ -9,11 +8,11 @@ export const manualBackup = sdk.Action.withoutInput(
     description: 'Manually trigger a backup of the channel.backup file to enabled backup providers.',
     warning: null,
     allowedStatuses: 'only-running',
-    group: 'Backup',
+    group: 'Security',
     visibility: 'enabled',
   }),
   async ({ effects }) => {
-    // ✅ Use withTemp + touch to ensure reliable inotify event
+
     const res = await sdk.SubContainer.withTemp(
       effects,
       { imageId: 'lnd' },
