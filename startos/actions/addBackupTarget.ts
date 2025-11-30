@@ -622,7 +622,6 @@ async ({ effects }) => {
     return config.selectedRcloneRemotes?.some((r: string) => r.startsWith(p + ':'))
   }) as typeof VALID_PROVIDERS[number][]
   
-  // Get Google Drive client ID to generate auth URL
   const gdriveSection = sections['gdrive'] || {}
   const existingClientId = gdriveSection.client_id || ''
   const authUrl = existingClientId ? generateGoogleAuthUrl(existingClientId) : ''
@@ -759,16 +758,13 @@ async ({ effects, input }) => {
   const clientSecret = input.google['gdrive-client-secret']?.trim()
   const authCodeInput = input.google['gdrive-auth-code']?.trim()
   const refreshTokenInput = input.google['gdrive-refresh-token']?.trim()  // ← NEW
-  // Check if we have existing config
   const existingClientId = existingSection.client_id || ''
   const existingClientSecret = existingSection.client_secret || ''
   const existingToken = existingSection.token || ''
-  // Use new values if provided, otherwise use existing
   const finalClientId = clientId || existingClientId
   const finalClientSecret = clientSecret || existingClientSecret
   let finalToken = existingToken
 
-  // ← NEW: If user provided a refresh token directly, use it
   if (refreshTokenInput && finalClientId && finalClientSecret) {
     const dummyExpiry = '2020-01-01T00:00:00Z'
     finalToken = JSON.stringify({
@@ -778,10 +774,8 @@ async ({ effects, input }) => {
       expiry: dummyExpiry
     })
   }
-  // If user provided a new authorization code, exchange it for tokens
   else if (authCodeInput && finalClientId && finalClientSecret) {
     console.log('Exchanging authorization code for Google Drive tokens...')
-    // Extract code from URL if full URL was provided
     let authCode = authCodeInput
     if (authCodeInput.includes('code=')) {
       const match = authCodeInput.match(/code=([^&]+)/)
@@ -789,7 +783,6 @@ async ({ effects, input }) => {
         authCode = match[1]
       }
     }
-    // Exchange authorization code for tokens using Google OAuth2 API
     try {
       const tokenResponse = await new Promise<any>((resolve, reject) => {
         const postData = new URLSearchParams({
@@ -827,11 +820,9 @@ async ({ effects, input }) => {
         req.write(postData)
         req.end()
       })
-      // Validate token response
       if (!tokenResponse.access_token || !tokenResponse.refresh_token) {
         throw new Error('Google did not return valid tokens. Make sure you copied the complete authorization code.')
       }
-      // Format token for rclone
       const expiry = new Date(Date.now() + (tokenResponse.expires_in * 1000)).toISOString()
       finalToken = JSON.stringify({
         access_token: tokenResponse.access_token,
@@ -1086,7 +1077,6 @@ Then paste the authorization code or refresh token in the fields above and submi
         newRemotes.push(remotePath)
         newEnabled.push(remotePath)
       } else {
-        // Email provider
         const from = input.email['email-from']?.trim() || config.emailBackup?.from || ''
         const to = input.email['email-to']?.trim() || config.emailBackup?.to || ''
         const server = input.email['email-smtp-server']?.trim() || config.emailBackup?.smtp_server || 'smtp.gmail.com'

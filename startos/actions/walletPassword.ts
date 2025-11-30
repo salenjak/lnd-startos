@@ -6,7 +6,6 @@ import { lndConfFile } from '../fileModels/lnd.conf'
 
 const { InputSpec, Value } = sdk
 
-// --- manualWalletUnlock Action ---
 
 type ManualUnlockInput = {
   password: string
@@ -14,7 +13,6 @@ type ManualUnlockInput = {
 
 export const manualWalletUnlock = sdk.Action.withInput(
   'manual-wallet-unlock',
-  // --- Metadata Function ---
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     return {
@@ -26,7 +24,6 @@ export const manualWalletUnlock = sdk.Action.withInput(
       visibility: store?.autoUnlockEnabled === false ? 'enabled' : { disabled: 'Auto-unlock is enabled or wallet not initialized for manual unlock' },
     }
   },
-  // --- Input Specification ---
   InputSpec.of({
     password: Value.text({
       name: 'Wallet - Password',
@@ -36,9 +33,7 @@ export const manualWalletUnlock = sdk.Action.withInput(
       default: null,
     }),
   }),
-  // --- Pre-fill Function ---
   async () => ({}),
-  // --- Run Function ---
   async ({ effects, input }: { effects: Effects; input: ManualUnlockInput }) => {
     const { password } = input
     const store = await storeJson.read().const(effects)
@@ -46,19 +41,16 @@ export const manualWalletUnlock = sdk.Action.withInput(
       throw new Error('Wallet not initialized')
     }
 
-    // Encode password to base64
     const walletPasswordBase64 = Buffer.from(password, 'utf8').toString('base64')
     console.log('Unlocking wallet with provided password (base64):************************')//, walletPasswordBase64)
 
     try {
-      // Execute curl command to unlock wallet using a temporary subcontainer
       const res = await sdk.SubContainer.withTemp(
         effects,
         { imageId: 'lnd' },
         mainMounts,
         'manual-unlock-temp',
         async (lndSub) => {
-          // Read 'restore' and 'recoveryWindow' from the 'store' object within this scope
           const storeForUnlock = (await storeJson.read().const(effects))!
           const currentRestore = storeForUnlock?.restore ?? false
           const currentRecoveryWindow = storeForUnlock?.recoveryWindow ?? 2500
@@ -108,8 +100,6 @@ export const manualWalletUnlock = sdk.Action.withInput(
     }
   },
 )
-
-// --- walletPassword Action (For setting/changing password) ---
 
 type Input = {
   currentPassword: string
@@ -349,7 +339,6 @@ export const disableAutoUnlock = sdk.Action.withInput(
         throw new Error('Cannot enable auto-unlock: No wallet password found in store.json and none provided. Please enter the password.')
       }
 
-      // Clear task
       try {
         await sdk.action.clearTask(effects, 'lnd', 'manual-wallet-unlock')
         console.log('Manual unlock task cleared when enabling auto-unlock.')
@@ -360,7 +349,6 @@ export const disableAutoUnlock = sdk.Action.withInput(
       await storeJson.merge(effects, { autoUnlockEnabled: true })
       console.log('Auto-unlock enabled in store.json.')
 
-      // Restart to apply
       await sdk.restart(effects)
 
       const msgSuffix = (input.walletPasswordInput != null && input.walletPasswordInput.trim() !== '') ? ' The provided password has been stored.' : ''

@@ -79,22 +79,19 @@ export const disableAutoUnlock = sdk.Action.withInput(
     }
 
     if (!input.autoUnlockEnabled) {
-      // Disabling auto-unlock
       try {
         await storeJson.merge(effects, {
           autoUnlockEnabled: false,
           walletPassword: null,
-          // passwordBackupConfirmed: false, // Keep as is to avoid unintended changes
+
         })
         console.log('Auto-unlock disabled. Password cleared from store.json.')
-        // Restart service to ensure UI updates
         try {
           console.log('Initiating service restart to apply auto-unlock disable and update UI.')
           await sdk.restart(effects)
           console.log('Service restart initiated successfully.')
         } catch (restartErr) {
           console.error('Failed to restart service after disabling auto-unlock:', (restartErr as Error).message || String(restartErr))
-          // Revert store changes on restart failure
           await storeJson.merge(effects, {
             autoUnlockEnabled: currentState,
             walletPassword: store?.walletPassword || null,
@@ -116,12 +113,10 @@ export const disableAutoUnlock = sdk.Action.withInput(
         throw new Error(`Failed to disable auto-unlock: ${(err as Error).message}`)
       }
     } else {
-      // Enabling auto-unlock
       let passwordToUse = store?.walletPassword
 
       if (input.walletPasswordInput != null && input.walletPasswordInput.trim() !== '') {
         const password = input.walletPasswordInput.trim()
-        // Validate password length
         if (password.length < 8) {
           console.error('Password validation failed: Password is less than 8 characters.')
           throw new Error('Password must be at least 8 characters long to meet LND requirements.')
@@ -136,7 +131,6 @@ export const disableAutoUnlock = sdk.Action.withInput(
         throw new Error('Cannot enable auto-unlock: No wallet password found in store.json and none provided. Please enter a valid password (minimum 8 characters).')
       }
 
-      // Clear manual-wallet-unlock task
       let taskCleared = false
       const maxAttempts = 3
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -159,7 +153,6 @@ export const disableAutoUnlock = sdk.Action.withInput(
         console.error('All attempts to clear manual-wallet-unlock task failed. Dashboard may show stale task.')
       }
 
-      // Update store to enable auto-unlock
       try {
         await storeJson.merge(effects, {
           autoUnlockEnabled: true,
@@ -170,11 +163,9 @@ export const disableAutoUnlock = sdk.Action.withInput(
         throw new Error(`Failed to enable auto-unlock: ${(err as Error).message}`)
       }
 
-      // Wait for 5 seconds to ensure clean shutdown before restarting
       console.log('Waiting 5 seconds before initiating service restart...')
       await new Promise(resolve => setTimeout(resolve, 5000))
 
-      // Restart service to apply changes and update UI
       try {
         console.log('Initiating service restart to apply auto-unlock and update UI.')
         await sdk.restart(effects)
@@ -193,7 +184,6 @@ export const disableAutoUnlock = sdk.Action.withInput(
         }
       } catch (restartErr) {
         console.error('Failed to restart service after enabling auto-unlock:', (restartErr as Error).message || String(restartErr))
-        // Revert store changes on restart failure
         await storeJson.merge(effects, {
           autoUnlockEnabled: currentState,
           walletPassword: store?.walletPassword || null,

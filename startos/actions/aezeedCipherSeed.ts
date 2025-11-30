@@ -35,7 +35,6 @@ const seedBackupInputSpec = InputSpec.of({
   }),
 })
 
-/** Display the full Aezeed Cipher Seed */
 export const aezeedCipherSeed = sdk.Action.withoutInput(
   'aezeed-cipher-seed',
   async ({ effects }: { effects: Effects }) => {
@@ -74,16 +73,12 @@ export const aezeedCipherSeed = sdk.Action.withoutInput(
   },
 )
 
-/** Confirm seed backup with pre-filled position hints */
 export const confirmSeedBackup = sdk.Action.withInput(
   'confirm-seed-backup',
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     let desc = 'Confirm you have backed up your Aezeed Cipher Seed.'
-   // if (store?.seedBackupIndices?.length === 3) {
-   //   const positions = store.seedBackupIndices.map(i => i + 1).join(', ')
-   //   desc += ` (You will be asked for words at positions: ${positions})`
-   // }
+   
     return {
       name: 'Aezeed Cipher Seed - Backup',
       description: desc,
@@ -98,7 +93,6 @@ export const confirmSeedBackup = sdk.Action.withInput(
     }
   },
   seedBackupInputSpec,
-  // Prefill: fills input boxes + updates labels
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     if (!store?.aezeedCipherSeed) throw new Error('No seed available')
@@ -135,7 +129,6 @@ export const confirmSeedBackup = sdk.Action.withInput(
       },
     }
   },
-  // Submit handler
   async ({ effects, input }: { effects: Effects; input: SeedBackupInput }) => {
     const store = await storeJson.read().const(effects)
     if (!store?.aezeedCipherSeed) {
@@ -181,7 +174,6 @@ export const confirmSeedBackup = sdk.Action.withInput(
   }
 )
 
-/** Delete seed from server after backup confirmed */
 export const deleteCipherSeed = sdk.Action.withoutInput(
   'delete-cipher-seed',
   async ({ effects }: { effects: Effects }) => {

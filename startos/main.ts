@@ -1,4 +1,3 @@
-// main.ts-v16
 import { sdk } from './sdk'
 import { FileHelper } from '@start9labs/start-sdk'
 import {
@@ -32,7 +31,6 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
     passwordBackupConfirmed,
   } = (await storeJson.read().once())!
 
-  // ✅ EARLY TASK MANAGEMENT: Create or clear manual unlock task
   if (autoUnlockEnabled) {
     console.log('Auto-unlock is enabled. Clearing manual-wallet-unlock task...')
     try {
@@ -54,7 +52,6 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
     }
   }
 
-  console.log('Initial walletPassword from store.json (base64):************************')//, walletPassword)
   console.log('Auto-unlock enabled:', autoUnlockEnabled)
   console.log('Seed backup confirmed:', seedBackupConfirmed)
   console.log('Password backup confirmed:', passwordBackupConfirmed)
@@ -93,7 +90,6 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
     autoUnlockEnabled = updatedStore.autoUnlockEnabled
     seedBackupConfirmed = updatedStore.seedBackupConfirmed
     passwordBackupConfirmed = updatedStore.passwordBackupConfirmed
-    console.log('Refreshed walletPassword after initialization (base64):************************')//, walletPassword)
     console.log('Auto-unlock enabled after initialization:', autoUnlockEnabled)
   }
 
@@ -104,8 +100,7 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
     console.log('Pending password change detected. Performing change...')
     const newPassword = Buffer.from(pendingPasswordChange, 'base64').toString('utf8')
     const currentPassword = walletPassword
-    console.log('Current password (decoded):************************')//, currentPassword)
-    console.log('New password (decoded):************************')//, newPassword)
+    
 
     try {
       await sdk.SubContainer.withTemp(
@@ -198,7 +193,6 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
       })
       console.log('Password changed successfully.')
 
-      // Clear task after password change (since auto-unlock is re-enabled)
       try {
         await sdk.action.clearTask(effects, 'lnd', 'manual-wallet-unlock')
         console.log('✅ Manual unlock task cleared after password change.')
@@ -218,7 +212,6 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
       autoUnlockEnabled = updatedStore.autoUnlockEnabled
       seedBackupConfirmed = updatedStore.seedBackupConfirmed
       passwordBackupConfirmed = updatedStore.passwordBackupConfirmed
-      console.log('Refreshed walletPassword after password change (base64):************************')//, walletPassword)
       console.log('Auto-unlock enabled after password change:', autoUnlockEnabled)
     } catch (err) {
       console.error('Password change failed:', err)
@@ -680,27 +673,22 @@ if (currentAutoUnlockEnabled && currentWalletPasswordPlaintext) {
       const config = await customConfigJson.read().once();
       const conf = (await lndConfFile.read().const(effects))!;
 
-      // Channels Backup
       const backupEnabled = config?.channelAutoBackupEnabled ?? false;
       const backupIcon = backupEnabled ? '🟢】' : '🔴】';
       const backupText = backupEnabled ? 'ENABLED' : 'DISABLED';
       const backupStatus = `${backupText}${backupIcon}`;
 
-      // Wallet Unlocking
       const autoUnlock = store?.autoUnlockEnabled ?? false;
       const unlockIcon = autoUnlock ? '🟡】' : '🟢】';
       const unlockText = autoUnlock ? 'AUTO ' : 'MANUAL';
       const unlockStatus = `${unlockText}${unlockIcon}`;
 
-      // Aezeed Seed
       const seedOnServer = (store?.aezeedCipherSeed || []).length > 0;
       const seedIcon = seedOnServer ? '🟡】' : '🟢】';
       const seedText = seedOnServer ? 'ON SERVER' : 'DELETED';
       const seedStatus = `${seedText}${seedIcon}`;
 
-      // Watchtower Client
-      // @ts-ignore
-      
+     
       const wtClientEnabled = (store?.watchtowers || []).length > 0;
       const wtIcon = wtClientEnabled ? '🟢】' : '🔴】';
       const wtText = wtClientEnabled ? 'ENABLED' : 'DISABLED';
