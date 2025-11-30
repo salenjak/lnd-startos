@@ -126,12 +126,10 @@ export const disableAutoUnlock = sdk.Action.withInput(
           console.error('Password validation failed: Password is less than 8 characters.')
           throw new Error('Password must be at least 8 characters long to meet LND requirements.')
         }
-        console.log('Password provided in input. Encoding and storing.')
-        const encodedInputPassword = Buffer.from(password, 'utf8').toString('base64')
         await storeJson.merge(effects, {
-          walletPassword: encodedInputPassword,
+        walletPassword: password,
         })
-        passwordToUse = encodedInputPassword
+        passwordToUse = password
       }
 
       if (!passwordToUse) {

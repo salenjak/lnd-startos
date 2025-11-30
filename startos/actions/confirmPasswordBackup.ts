@@ -49,9 +49,8 @@ export const confirmPasswordBackup = sdk.Action.withInput(
       }
     }
     const { password } = input
-    const decodedStorePassword = Buffer.from(store.walletPassword, 'base64').toString('utf8')
-    if (password !== decodedStorePassword) {
-      throw new Error('Password does not match.')
+    if (password !== store.walletPassword) {
+    throw new Error('Password does not match.')
     }
     await storeJson.merge(effects, { passwordBackupConfirmed: true }, { allowRestart: false } as any)
     console.log('Password backup confirmed')

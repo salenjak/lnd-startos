@@ -160,6 +160,8 @@ export const walletPassword = sdk.Action.withInput(
       try {
         const decodedPassword = Buffer.from(store.walletPassword, 'base64').toString('utf8')
         currentPasswordDefault = decodedPassword
+        currentPasswordDefault = store.walletPassword
+
         currentPasswordDescription = 'Your current wallet password (loaded from store).'
         console.log('Pre-filling current password field (plaintext) for user convenience (auto-unlock enabled).')
       } catch (decodeError) {
@@ -179,108 +181,75 @@ export const walletPassword = sdk.Action.withInput(
     }
   },
   async ({ effects, input }: { effects: Effects; input: Input }) => {
-    const { currentPassword, newPassword, confirmPassword } = input
-    const store = await storeJson.read().const(effects)
+  const { currentPassword, newPassword, confirmPassword } = input
+  const store = await storeJson.read().const(effects)
 
-    if (!store) {
-      throw new Error('Store not initialized.')
+  if (!store) throw new Error('Store not initialized.')
+
+  const walletInitialized = store.walletInitialized ?? false
+  const autoUnlockEnabled = store.autoUnlockEnabled ?? false
+
+  if (!walletInitialized) {
+    if (newPassword !== confirmPassword) throw new Error('New passwords do not match.')
+    if (!newPassword || newPassword.length < 8) throw new Error('New password must be at least 8 characters.')
+
+    await storeJson.merge(effects, {
+      walletPassword: newPassword, 
+      pendingPasswordChange: null,
+      passwordChangeError: null,
+    })
+
+    return {
+      version: '1',
+      title: 'Initial Password Set',
+      message: 'Initial wallet password has been set.',
+      result: null,
+    }
+  }
+
+  if (newPassword !== confirmPassword) throw new Error('New passwords do not match.')
+  if (!newPassword || newPassword.length < 8) throw new Error('New password must be at least 8 characters.')
+
+  if (autoUnlockEnabled && store.walletPassword) {
+    if (currentPassword !== store.walletPassword) {
+      throw new Error('Current password is incorrect.')
+    }
+  }
+
+  const encodedNewPassword = Buffer.from(newPassword, 'utf8').toString('base64')
+
+  try {
+    const wasAutoUnlockDisabled = !autoUnlockEnabled
+    
+    await storeJson.merge(effects, {
+      walletPassword: currentPassword,           // ← plaintext
+      pendingPasswordChange: encodedNewPassword, // ← base64 (required by main.ts)
+      autoUnlockEnabled: true,
+      passwordChangeError: null,
+      passwordBackupConfirmed: false,
+    })
+
+    await sdk.restart(effects)
+
+    let message = 'Password change initiated. The service is restarting...'
+    if (wasAutoUnlockDisabled) {
+      message += ' Auto-unlock was temporarily enabled. Disable it again after confirming the new password works.'
     }
 
-    const walletInitialized = store.walletInitialized ?? false
-    const autoUnlockEnabled = store.autoUnlockEnabled ?? false
-
-    if (!walletInitialized) {
-      console.log('Wallet not initialized. Setting initial password.')
-      if (newPassword !== confirmPassword) {
-        throw new Error('New passwords do not match.')
-      }
-      if (!newPassword || newPassword.length < 8) {
-        throw new Error('New password must be at least 8 characters.')
-      }
-      const encodedNewPassword = Buffer.from(newPassword, 'utf8').toString('base64')
-      console.log('Setting initial wallet password (base64):************************')//, encodedNewPassword)
-
-      await storeJson.merge(effects, {
-        walletPassword: encodedNewPassword,
-        pendingPasswordChange: null,
-        passwordChangeError: null,
-      })
-
-      console.log('Initial wallet password set successfully.')
-      return {
-        version: '1',
-        title: 'Initial Password Set',
-        message: 'Initial wallet password has been set. It will be used when the wallet is initialized.',
-        result: null,
-      }
-    }
-
-    console.log('Wallet is initialized. Performing password change.')
-    if (newPassword !== confirmPassword) {
-      throw new Error('New passwords do not match.')
-    }
-    if (!newPassword || newPassword.length < 8) {
-      throw new Error('New password must be at least 8 characters.')
-    }
-
-    // Validate current password if auto-unlock is enabled and password is stored
-    if (autoUnlockEnabled && store.walletPassword) {
-      const decodedStorePassword = Buffer.from(store.walletPassword, 'base64').toString('utf8')
-      if (currentPassword !== decodedStorePassword) {
-        throw new Error('Current password is incorrect (does not match stored password).')
-      }
-    }
-
-    const encodedNewPassword = Buffer.from(newPassword, 'utf8').toString('base64')
-    const encodedCurrentPassword = Buffer.from(currentPassword, 'utf8').toString('base64')
-    console.log('Encoded new password (base64):************************')//, encodedNewPassword)
-    console.log('Encoded current password (base64):************************')//, encodedCurrentPassword)
-
-    try {
-      // Temporarily enable auto-unlock if disabled to use the REST API workflow
-      const wasAutoUnlockDisabled = !autoUnlockEnabled
-      await storeJson.merge(effects, {
-        walletPassword: encodedCurrentPassword,
-        pendingPasswordChange: encodedNewPassword,
-        autoUnlockEnabled: true, // Temporarily enable for password change
-        passwordChangeError: null,
-        passwordBackupConfirmed: false,
-      })
-      console.log('Stored new password in pendingPasswordChange (base64):************************')//, encodedNewPassword)
-      console.log('Stored current password in walletPassword (base64):************************')//, encodedCurrentPassword)
-      console.log('Temporarily set autoUnlockEnabled to true for password change.')
-
-      // Restart the service to apply the password change (handled by main.ts)
-      console.log('Initiating service restart to apply password change...')
-      await sdk.restart(effects)
-      console.log('Service restart initiated successfully.')
-
-      // Prepare response message
-      let message = 'The password change process has been initiated. The service is restarting to apply the change. Please check the service logs or health checks for completion status.'
-      if (wasAutoUnlockDisabled) {
-        message += ' Auto-unlock has been temporarily enabled to process this change. After confirming the new password works, please go to "Disable Auto-Unlock" to disable it again.'
-      }
-
-      return {
-        version: '1',
-        title: 'Password Change Initiated',
-        message,
-        result: null,
-      }
-    } catch (err) {
-      console.error('Error initiating password change:', err)
-      await storeJson.merge(effects, {
-        pendingPasswordChange: null,
-        walletPassword: autoUnlockEnabled ? store.walletPassword : null, // Restore original state
-        autoUnlockEnabled, // Restore original auto-unlock state
-        passwordChangeError: (err as Error).message || String(err),
-      })
-      throw new Error(`Failed to initiate password change: ${(err as Error).message}`)
-    }
-  },
+    return { version: '1', title: 'Password Change Initiated', message, result: null }
+  } catch (err) {
+    console.error('Error initiating password change:', err)
+    await storeJson.merge(effects, {
+      pendingPasswordChange: null,
+      walletPassword: store.walletPassword, // restore original plaintext
+      autoUnlockEnabled,
+      passwordChangeError: (err as Error).message || String(err),
+    })
+    throw new Error(`Failed to initiate password change: ${(err as Error).message}`)
+  }
+}
 )
 
-// --- disableAutoUnlock Action ---
 
 type DisableAutoUnlockInput = {
   autoUnlockEnabled: boolean

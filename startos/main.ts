@@ -103,7 +103,7 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
     }
     console.log('Pending password change detected. Performing change...')
     const newPassword = Buffer.from(pendingPasswordChange, 'base64').toString('utf8')
-    const currentPassword = Buffer.from(walletPassword, 'base64').toString('utf8')
+    const currentPassword = walletPassword
     console.log('Current password (decoded):************************')//, currentPassword)
     console.log('New password (decoded):************************')//, newPassword)
 
@@ -191,7 +191,7 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
 
       console.log('Updating store with new password')
       await storeJson.merge(effects, {
-        walletPassword: pendingPasswordChange,
+        walletPassword: newPassword,
         pendingPasswordChange: null,
         passwordChangeError: null,
         autoUnlockEnabled: true,
@@ -298,49 +298,89 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
         fn: async (subcontainer, abort) => {
           const currentStore = (await storeJson.read().const(effects))!
           const currentAutoUnlockEnabled = currentStore.autoUnlockEnabled
-          const currentWalletPassword = currentStore.walletPassword
+          const currentWalletPasswordPlaintext = currentStore.walletPassword
+            if (!currentWalletPasswordPlaintext) {
+            console.log('No wallet password found. Skipping unlock.')
+            return null
+            }
+          const walletPasswordForApi = Buffer.from(currentWalletPasswordPlaintext, 'utf8').toString('base64')
           const currentWalletInitialized = currentStore.walletInitialized
           const recoveryWindow = currentStore.recoveryWindow
           const restore = currentStore.restore
 
           console.log(`Unlock oneshot started... Auto-unlock: ${currentAutoUnlockEnabled}`)
 
-          if (!currentWalletInitialized) {
-            console.log('Wallet not initialized. Skipping unlock.')
-            return null
-          }
+         if (!currentWalletInitialized) {
+  console.log('Wallet not initialized. Skipping unlock.')
+  return null
+}
 
-          if (currentAutoUnlockEnabled && currentWalletPassword) {
-            console.log('Auto-unlock enabled. Unlocking wallet...')
-            try {
-              const command = [
-                'curl',
-                '--no-progress-meter',
-                '-X', 'POST',
-                '--insecure',
-                '--cacert', `${lndDataDir}/tls.cert`,
-                'https://lnd.startos:8080/v1/unlockwallet',
-                '-d',
-                restore
-                  ? JSON.stringify({ wallet_password: currentWalletPassword, recovery_window: recoveryWindow })
-                  : JSON.stringify({ wallet_password: currentWalletPassword }),
-              ]
-              const result = await subcontainer.exec(command, undefined, undefined, { abort: abort.reason, signal: abort })
-              console.log('Wallet unlocked successfully.')
-              return null
-            } catch (err) {
-              console.error('Failed to unlock wallet:', err)
-              throw err
-            }
-          } else {
-            console.log('Auto-unlock disabled or no password. Skipping auto-unlock.')
-            return null
+if (currentAutoUnlockEnabled && currentWalletPasswordPlaintext) {
+  console.log('Auto-unlock enabled. Unlocking wallet...')
+  
+  let unlockAttempts = 0;
+  const maxUnlockAttempts = 5;
+  let unlockSuccess = false;
+
+  while (unlockAttempts < maxUnlockAttempts && !unlockSuccess) {
+    try {
+      
+      const command = [
+        'curl',
+        '--no-progress-meter',
+        '-X', 'POST',
+        '--insecure',
+        '--cacert', `${lndDataDir}/tls.cert`,
+        'https://lnd.startos:8080/v1/unlockwallet',
+        '-d',
+        restore
+          ? JSON.stringify({ wallet_password: walletPasswordForApi, recovery_window: recoveryWindow })
+          : JSON.stringify({ wallet_password: walletPasswordForApi })
+      ];
+      
+      const result = await subcontainer.exec(command, undefined, undefined, { 
+        abort: abort.reason, 
+        signal: abort 
+      });
+      
+      if (result.exitCode === 0 && result.stdout?.toString().trim() === '{}') { 
+        unlockSuccess = true;
+      } else {
+        throw new Error(`Unlock failed: ${result.stderr?.toString() || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Unlock attempt failed:', (err as Error).message);
+      unlockAttempts++;
+      if (unlockAttempts < maxUnlockAttempts) {
+        const delayStart = Date.now();
+        const totalDelayMs = 5000;
+        const pollIntervalMs = 500;
+        while (Date.now() - delayStart < totalDelayMs) {
+          if (abort.aborted) {
+            throw new Error('Unlock aborted during retry delay');
           }
-        },
+          await new Promise(resolve => setTimeout(resolve, pollIntervalMs));  // Check abort every 0.5s
+        }
+      } else {
+        throw new Error(`Failed to unlock wallet after ${maxUnlockAttempts} attempts: ${(err as Error).message}`);
+      }
+    }
+  }
+
+  if (!unlockSuccess) {
+    throw new Error('Unlock failed after all attempts');
+  }
+  
+  return null
+} else {
+  console.log('Auto-unlock disabled or no password. Skipping auto-unlock.')
+  return null
+}
       },
-      subcontainer: lndSub,
-      requires: ['primary'],
-    })
+    },
+    subcontainer: lndSub,
+    requires: ['primary'],
+  })
     
 .addDaemon('channel-backup-watcher', {
   exec: {
@@ -815,37 +855,31 @@ async function initializeLnd(
       } while (true)
 
       const store = (await storeJson.read().once())!
-      const walletPassword = store.walletPassword!
-      const plaintextPassword = Buffer.from(walletPassword, 'base64').toString('utf8')
-      const existingSeedBackupConfirmed = store.seedBackupConfirmed ?? false
-      const existingPasswordBackupConfirmed = store.passwordBackupConfirmed ?? false
-      console.log('Using existing plaintext password:**********************')//, plaintextPassword)
-      console.log('Initializing wallet with walletPassword (base64):************************')//, walletPassword)
 
-      await storeJson.merge(effects, {
-      aezeedCipherSeed: cipherSeed,
-      walletInitialized: true,
-      autoUnlockEnabled: true,
-      seedBackupConfirmed: existingSeedBackupConfirmed,      // preserve
-      passwordBackupConfirmed: existingPasswordBackupConfirmed, // preserve
-      })
+const walletPasswordPlaintext = store.walletPassword!
+const walletPasswordForApi = Buffer.from(walletPasswordPlaintext, 'utf8').toString('base64')
 
-      const status = await subc.exec([
-        'curl',
-        '--no-progress-meter',
-        '-X',
-        'POST',
-        '--insecure',
-        '--cacert',
-        `${lndDataDir}/tls.cert`,
-        '--fail-with-body',
-        'https://lnd.startos:8080/v1/initwallet',
-        '-d',
-        `${JSON.stringify({
-          wallet_password: walletPassword,
-          cipher_seed_mnemonic: cipherSeed,
-        })}`,
-      ])
+await storeJson.merge(effects, {
+  aezeedCipherSeed: cipherSeed,
+  walletInitialized: true,
+  autoUnlockEnabled: true,
+  seedBackupConfirmed: store.seedBackupConfirmed ?? false,
+  passwordBackupConfirmed: store.passwordBackupConfirmed ?? false,
+})
+
+const status = await subc.exec([
+  'curl',
+  '--no-progress-meter',
+  '-X', 'POST',
+  '--insecure',
+  '--cacert', `${lndDataDir}/tls.cert`,
+  '--fail-with-body',
+  'https://lnd.startos:8080/v1/initwallet',
+  '-d', JSON.stringify({
+    wallet_password: walletPasswordForApi,
+    cipher_seed_mnemonic: cipherSeed,
+  }),
+])
 
       if (status.stderr !== '' && typeof status.stderr === 'string') {
         console.log(`Error running initwallet: ${status.stderr}`)

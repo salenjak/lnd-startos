@@ -1,18 +1,33 @@
 import { VersionInfo, IMPOSSIBLE } from '@start9labs/start-sdk'
-import { readFile } from 'fs/promises'
+import { readFile, access } from 'fs/promises'
 import { storeJson } from '../../fileModels/store.json'
+import { load } from 'js-yaml'
 import { lndConfFile } from '../../fileModels/lnd.conf'
 import { lndConfDefaults, lndDataDir, mainMounts, sleep } from '../../utils'
 import { base32, base64 } from 'rfc4648'
 import { sdk } from '../../sdk'
 import { restPort } from '../../interfaces'
-import { load } from 'js-yaml'
+import { customConfigJson } from '../../fileModels/custom-config.json'
 
 export const v0_19_3_1_beta_0 = VersionInfo.of({
-version: '0.19.3-beta:1-beta.0',
+  version: '0.19.3-beta:1-beta.0',
   releaseNotes: 'Revamped for StartOS 0.4.0',
   migrations: {
     up: async ({ effects }) => {
+      
+      try {
+  await access('/media/startos/volumes/main/custom-config.json')
+} catch {
+  console.log('custom-config.json not found during migration. Creating with defaults.')
+  await customConfigJson.write(effects, {
+    channelAutoBackupEnabled: false,
+    rcloneConfig: null,
+    selectedRcloneRemotes: null,
+    enabledRemotes: null,
+    emailEnabled: false,
+    emailBackup: null,
+  })
+}
       const store = await storeJson.read().once()
 
       if (store) return // only run migration if store doesn't exist (heuristic for 0.3.5.1 migrations)
@@ -59,7 +74,7 @@ version: '0.19.3-beta:1-beta.0',
       const buffer = await readFile('/media/startos/volumes/main/pwd.dat')
       const decoded = buffer.toString('utf8')
       const reEncoded = Buffer.from(decoded, 'utf8')
-
+      
       if (buffer.equals(reEncoded)) {
         console.log('pwd.dat is typeable')
         walletPassword = decoded
@@ -75,7 +90,7 @@ version: '0.19.3-beta:1-beta.0',
             subpath: null,
             volumeId: 'main',
           })
-
+          
           try {
             await effects.setDependencies({
               dependencies: [
@@ -107,7 +122,7 @@ version: '0.19.3-beta:1-beta.0',
           mounts,
           'lnd-sub',
         )
-
+        
         await sdk.Daemons.of(effects, async () => null)
           .addDaemon('primary', {
             exec: { command: ['lnd'] },
@@ -195,7 +210,7 @@ version: '0.19.3-beta:1-beta.0',
         }
         storeJson.merge(effects, {
           aezeedCipherSeed: existingSeed.length === 24 ? existingSeed : null,
-          walletPassword: Buffer.from(walletPassword).toString('base64'),
+          walletPassword,
           walletInitialized: !!walletPassword,
           bitcoindSelected: configYaml.bitcoind.type === 'internal',
           recoveryWindow: configYaml.advanced['recovery-window'] || 2_500,
@@ -211,15 +226,15 @@ version: '0.19.3-beta:1-beta.0',
           autoUnlockEnabled: true,
           seedBackupConfirmed: false,
           passwordBackupConfirmed: false,
-            seedBackupIndices: null,
-        })
+          seedBackupIndices: null,
+        })        
       } catch (error) {
         console.log('config.yaml not found')
         throw new Error(
           'config.yaml not found. If LND was installed but never configured or run LND should be installed fresh.\nIf LND was configured/run prior to updating please contact Start9 support.',
         )
       }
-    },
+    },    
     down: IMPOSSIBLE,
   },
 })

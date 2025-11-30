@@ -1,4 +1,3 @@
-// fileModels/store.json.ts
 import { FileHelper, matches } from '@start9labs/start-sdk'
 
 const { arrayOf, object, string, natural, boolean } = matches
@@ -19,7 +18,6 @@ export const shape = object({
   seedBackupConfirmed: boolean,
   passwordBackupConfirmed: boolean,
   seedBackupIndices: arrayOf(natural).nullable(),
-  // ❌ BACKUP FIELDS REMOVED
 })
 
 export const storeJson = FileHelper.json(
