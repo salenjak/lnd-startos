@@ -14,11 +14,10 @@ export const shape = object({
   externalGateway: string.nullable().onMismatch(null),
   pendingPasswordChange: string.nullable().onMismatch(null),
   passwordChangeError: string.nullable().onMismatch(null),
-  autoUnlockEnabled: boolean,
-  seedBackupConfirmed: boolean,
-  passwordBackupConfirmed: boolean,
-  seedBackupIndices: arrayOf(natural).nullable(),
-})
+  autoUnlockEnabled: boolean.onMismatch(true),
+  seedBackupConfirmed: boolean.onMismatch(false),
+  passwordBackupConfirmed: boolean.onMismatch(false),
+seedBackupIndices: arrayOf(natural).nullable().onMismatch(null),})
 
 export const storeJson = FileHelper.json(
   {
