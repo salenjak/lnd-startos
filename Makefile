@@ -75,7 +75,6 @@ check-init:
 	fi
 
 javascript/index.js: $(shell find startos -type f) tsconfig.json node_modules
-
 	npm run build
 
 node_modules: package-lock.json
