@@ -13,7 +13,7 @@ export const watchtowerServerConfig = sdk.Action.withInput(
 
   // metadata
   async ({ effects }) => ({
-    name: 'Watchtower Server',
+    name: 'Watchtower - Server',
     description: 'Enable Watchtower Server in lnd.conf',
     warning: null,
     allowedStatuses: 'any',

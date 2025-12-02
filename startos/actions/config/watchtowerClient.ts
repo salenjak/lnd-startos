@@ -37,7 +37,7 @@ export const wtClientConfig = sdk.Action.withInput(
 
   // metadata
   async ({ effects }) => ({
-    name: 'Watchtower Client Settings',
+    name: 'Watchtower - Client',
     description: 'Edit the Watchtower Client settings in lnd.conf',
     warning: null,
     allowedStatuses: 'any',

@@ -8,7 +8,7 @@ export const towerInfo = sdk.Action.withoutInput(
 
   // metadata
   async ({ effects }) => ({
-    name: 'Watchtower Server Info',
+    name: 'Watchtower - Server Info',
     description: 'Get your Tower Server URL',
     warning: null,
     allowedStatuses: 'only-running',
