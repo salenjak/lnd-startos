@@ -12,7 +12,7 @@ type ManualUnlockInput = {
 }
 
 export const manualWalletUnlock = sdk.Action.withInput(
-  'manual-wallet-unlock',
+  'wallet-manual-unlock',
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     return {
@@ -247,7 +247,7 @@ type DisableAutoUnlockInput = {
 }
 
 export const disableAutoUnlock = sdk.Action.withInput(
-  'disable-auto-unlock',
+  'wallet-auto-unlock',
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     const currentState = store?.autoUnlockEnabled ?? true

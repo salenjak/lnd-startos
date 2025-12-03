@@ -10,7 +10,7 @@ type Input = {
 }
 
 export const disableAutoUnlock = sdk.Action.withInput(
-  'disable-auto-unlock',
+  'wallet-auto-unlock',
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     const currentState = store?.autoUnlockEnabled ?? false // Default to false to avoid stuck ENABLED state

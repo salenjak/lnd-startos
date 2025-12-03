@@ -9,7 +9,7 @@ type Input = {
 }
 
 export const confirmPasswordBackup = sdk.Action.withInput(
-  'confirm-password-backup',
+  'wallet-password-backup',
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     return {

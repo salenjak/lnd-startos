@@ -2,7 +2,7 @@ import { sdk } from '../sdk'
 import { lndDataDir } from '../utils'
 
 export const manualBackup = sdk.Action.withoutInput(
-  'manual-backup',
+  'channels-backup-test',
   async ({ effects }) => ({
     name: 'Channels - Test Auto-Backup',
     description: 'Manually trigger a backup of the channel.backup file to enabled backup providers.',

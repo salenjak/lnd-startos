@@ -76,7 +76,7 @@ function generateGoogleAuthUrl(clientId: string): string {
 }
 
 export const addBackupTarget = sdk.Action.withInput(
-  'add-backup-target',
+  'channels-backup',
   async ({ effects }) => ({
     name: 'Channels - Auto-Backup',
     description: 'Add and configure backup providers for your channel.backup file. You can select multiple providers (Nextcloud, Dropbox, Google Drive, Email, SFTP) and multiple email recipients.',

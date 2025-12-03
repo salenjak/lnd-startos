@@ -4,7 +4,7 @@ import { mainMounts, TowerInfo } from '../utils'
 
 export const towerInfo = sdk.Action.withoutInput(
   // id
-  'tower-info',
+  'watchtower-server-info',
 
   // metadata
   async ({ effects }) => ({

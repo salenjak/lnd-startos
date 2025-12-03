@@ -74,7 +74,7 @@ export const aezeedCipherSeed = sdk.Action.withoutInput(
 )
 
 export const confirmSeedBackup = sdk.Action.withInput(
-  'confirm-seed-backup',
+  'aezeed-cipher-seed-backup',
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     let desc = 'Confirm you have backed up your Aezeed Cipher Seed.'
@@ -175,7 +175,7 @@ export const confirmSeedBackup = sdk.Action.withInput(
 )
 
 export const deleteCipherSeed = sdk.Action.withoutInput(
-  'delete-cipher-seed',
+  'aezeed-cipher-seed-delete',
   async ({ effects }: { effects: Effects }) => {
     const store = await storeJson.read().const(effects)
     return {
