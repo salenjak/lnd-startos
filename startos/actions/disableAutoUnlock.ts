@@ -25,8 +25,7 @@ export const disableAutoUnlock = sdk.Action.withInput(
       actionName = `Wallet - Auto-Unlock: ENABLED \u{1F513}`
       actionDescription = `Enable / Disable auto-unlocking of the LND wallet on startup. The disabled state protects your on-chain and off-chain Bitcoin in case of server theft. If enabled, anyone with physical access to the server can reflash StartOS, set a new master password, and use apps (RTL, ThunderHub, etc.) or other methods to steal funds, since the LND wallet.db is automatically unlocked with the password from the store.json file.
       <div>⚠️IMPORTANT: Confirm password backup to disable auto-unlocking because password will be deleted from the server.</div>`
-      actionWarning = 'Disabling auto-unlock will delete your password from the server and require manual unlocking via the "Unlock Wallet" action below or in the Dashboard / Tasks when starting LND.'
-    } else {
+      actionWarning = `Disabling auto-unlock will delete your password from the server and require manual unlocking using the "Wallet - Manual Unlock" action below, or from the "Dashboard ⇢ Tasks" when starting LND.<br>\u{1F4A1} If you want to switch back to the official StartOS LND package (same version), you must re-enable auto-unlock first.`    } else {
       actionName = `Wallet - Auto-Unlock: DISABLED \u{1F512}`
       actionDescription = `Enable / Disable auto-unlocking of the LND wallet on startup. The disabled state protects your on-chain and off-chain Bitcoin in case of server theft. If enabled, anyone with physical access to the server can reflash StartOS, set a new master password, and use apps (RTL, ThunderHub, etc.) or other methods to steal funds, since the LND wallet.db is automatically unlocked with the password from the store.json file.
       <div>⚠️IMPORTANT: Enabling auto-unlock stores password on server, risking fund theft if server is stolen.</div>`

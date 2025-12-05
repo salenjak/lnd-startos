@@ -12,7 +12,7 @@ import { lndConfFile } from './fileModels/lnd.conf'
 import { manifest } from './manifest'
 import { storeJson } from './fileModels/store.json'
 import { customConfigJson } from './fileModels/custom-config.json'
-
+import { access } from 'fs/promises'
 import { base64 } from 'rfc4648'
 export const main = sdk.setupMain(async ({ effects, started }) => {
   console.log('Starting LND!')
@@ -30,6 +30,22 @@ export const main = sdk.setupMain(async ({ effects, started }) => {
     seedBackupConfirmed,
     passwordBackupConfirmed,
   } = (await storeJson.read().once())!
+
+  // Ensures custom-config.json is always created — critical for seamless switching between this fork and the official Start9 LND package (same version).
+ try {
+     await access('/media/startos/volumes/main/custom-config.json')
+     console.log('Found existing custom-config.json')
+   } catch {
+     console.log("Couldn't find custom-config.json. Creating defaults.")
+     await customConfigJson.write(effects, {
+       rcloneConfig: null,
+       selectedRcloneRemotes: null,
+       enabledRemotes: null,
+       channelAutoBackupEnabled: false,
+       emailBackup: null,
+       emailEnabled: false,
+     })
+   }
 
   if (autoUnlockEnabled) {
     console.log('Auto-unlock is enabled. Clearing manual-wallet-unlock task...')
