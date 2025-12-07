@@ -2,11 +2,11 @@
   <img src="icon.png" alt="Project Logo" width="21%">
 </p>
 
-# LND for StartOS — Security & Backup Suite
+# LND for StartOS — "Be Your Own <b>LOCKED</b> (this fork) / <b>UNLOCKED</b> (official version) Bank"
 
 > **Improved wallet security and automated channel backups for your Lightning node.**
 
-This branch (`channels-auto-backup`) extends the official [LND StartOS package](https://github.com/Start9Labs/lnd-startos) with:
+This fork extends the official [LND StartOS package](https://github.com/Start9Labs/lnd-startos) with:
 - 📤 **Automated, encrypted channel backups** (Add and configure backup providers for your channel.backup file. You can select multiple providers (Nextcloud, Dropbox, Google Drive, Email, SFTP) and multiple email recipients.)
 - 🛡️ **Unified Security Dashboard** showing your current security setup (【① Channels Backup: ENABLED🟢】
 【② Wallet Unlocking: MANUAL🟢】
