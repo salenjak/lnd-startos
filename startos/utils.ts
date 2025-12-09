@@ -64,7 +64,7 @@ export const lndConfDefaults = {
   'autopilot.conftarget': 1,
 
   // Tor
-  'tor.active': false,
+  'tor.active': true,
   'tor.socks': undefined,
   'tor.skip-proxy-for-clearnet-targets': true,
   'tor.streamisolation': false,
